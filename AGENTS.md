@@ -7,7 +7,7 @@
 - **Project Type:** Super Mario Clone using Phaser 3.
 
 ## 2. TECHNICAL ARCHITECTURE (The "Mental Model")
-The project is a procedural platformer. It does NOT use standard Tiled maps; it generates levels via code.
+The project is a procedural platformer. It does NOT use standard Tiled maps; it generates levels via code. For a friendly map of the moving parts, see `ASSETS.md`. For the player-eye view, see `Gameplay.md`.
 
 ### **Key Files**
 - **`javascript/game.js`**: The "Monolith." Contains the `preload`, `create`, `update` loop and Level Generation logic.
@@ -30,11 +30,14 @@ The project is a procedural platformer. It does NOT use standard Tiled maps; it 
     - If suggesting a fix, assume we are editing the raw `.js` files, not a compile target.
 
 ## 4. KNOWN GAME MECHANICS
-- **Movement:** Arrow keys/WASD. Shift to run.
+- **Movement:** Arrow keys/WASD. Running is the default speed; no separate sprint key yet. See `Gameplay.md` for the kid-friendly rundown.
 - **Generation:** Levels are random. If we want to change block placement, we must look in `game.js`.
 - **Mario States:** Small, Grown (Mushroom), Fire (Flower).
+
 ## 5. PROJECT DOCUMENTATION
-- **Feature Backlog (ROADMAP.md):** The file `ROADMAP.md` in the root directory contains all planned features, categorized by difficulty (Quick Wins, Medium Quests, Boss Level). Before implementing any major new feature, the agent should consult this file to check its status and category.
+- **Gameplay (player-eye):** `Gameplay.md` — what the game does, controls, and how to explain it to newcomers.
+- **Assets & Code Map:** `ASSETS.md` — where key objects, sprites, and functions live so we can mod quickly.
+- **Feature Backlog:** `ROADMAP.md` — planned work, grouped by difficulty (Quick Wins, Medium Quests, Boss Level). Check before adding major features.
 - **Game Design Document:** See `game_design.md` for the core mechanics and structure.
 ## 6. TESTING & AUTOMATION PROTOCOLS
 **CRITICAL: DO NOT OPEN NEW BROWSER TABS.**

@@ -1,24 +1,24 @@
-# 🗺️ Project Roadmap & Quest Log
+# Project Roadmap & Quest Log
 
-## 🟢 Quick Wins (10-20 mins)
-*Great for starting a session.*
-- [ ] **Input:** Add support for Arrow Keys (currently only WASD?).
-- [ ] **Visual:** Change the background color of the sky.
-- [ ] **Audio:** Change the "Jump" sound effect.
-- [ ] **UI:** Add a "High Score" text that saves to the browser.
+## Quick Wins (10–20 mins)
+Small, visual, or sound tweaks to warm up.
+- [ ] Visual: Change the sky color or tint to set a new vibe.
+- [ ] Audio: Swap the jump sound effect for something funnier.
+- [ ] HUD: Adjust score/time text size or position so it reads clearly on smaller screens.
+- [ ] Controls hint: Add a tiny “A/D or Arrows to move, Space to jump” note on the start screen.
 
-## 🟡 Medium Quests (1 hour)
-*Requires some logic changes.*
-- [ ] **Physics:** Make coins fall to the ground and bounce when they appear (instead of floating).
-- [ ] **Mechanics:** Add a "Double Jump" ability.
-- [ ] **Enemies:** Make Goombas speed up as the level gets higher.
+## Medium Quests (about 1 hour)
+Takes a bit of logic but still bite-sized.
+- [ ] Physics: Make coins pop out, fall, and bounce once before disappearing instead of hovering.
+- [ ] Mechanics: Add a Double Jump (maybe only when grown/fire to keep balance).
+- [ ] Enemies: Make Goombas speed up after a timer or when the player reaches mid-level.
 
-## 🔴 Boss Level Projects (Multiple Sessions)
-*Big architectural changes.*
-- [ ] **Avatar System:** Allow pressing 'C' to swap Mario for another character sprite.
-- [ ] **Level Editor:** A way to place blocks manually instead of random generation.
-- [ ] **Mobile Support:** Add touch screen buttons for the iPad.
+## Boss Level Projects (multi-session)
+Big changes that need planning.
+- [ ] Avatar swap: Press `C` to swap Mario for another character sprite set.
+- [ ] Level editor: Place blocks by hand instead of purely random generation.
+- [ ] Mobile polish: Add on-screen jump/fire buttons alongside the joystick.
 
-## 🧊 The "Icebox" (Ideas for Later)
-- Multiplayer?
-- Power-up that makes Mario invisible?
+## The Icebox (ideas for later)
+- Multiplayer run-and-race mode.
+- Power-up that makes Mario invisible (sneak past enemies?).
