@@ -66,8 +66,8 @@ var controlKeys = {
     LEFT: null,
     RIGHT: null,
     FIRE: null,
-    PAUSE: null
-
+    PAUSE: null,
+    C: null
 };
 
 var score = 0;
@@ -79,6 +79,17 @@ var reachedLevelEnd = false;
 var smoothedControls;
 var gameOver = false;
 var gameWinned = false;
+
+var skyColors = [
+    0x8585FF, // Default Blue
+    0xFF8C00, // Sunset Orange
+    0x000000, // Night Black
+    0x663399, // Alien Purple
+    0x00BFFF, // Deep Sky Blue
+    0xFF69B4  // Hot Pink
+];
+var currentSkyColorIndex = 0;
+var skyBackgrounds = [];
 
 var game = new Phaser.Game(config);
 
@@ -322,6 +333,8 @@ function create() {
         }
     };
 
+    skyBackgrounds = []; // Reset sky backgrounds array
+
     this.physics.world.setBounds(0, 0, worldWidth, screenHeight);
 
     // Create camera
@@ -341,9 +354,11 @@ function create() {
     applySettings.call(this);
 
     smoothedControls = new SmoothedHorionztalControl(0.001);
+
 }
 
 function createControls() {
+    console.log('DEBUG: createControls started');
 
     this.joyStick = this.plugins.get('rexvirtualjoystickplugin').add(this, {
         x: screenWidth * 0.118,
@@ -358,13 +373,31 @@ function createControls() {
 
     // Set control keys
 
-    const keyNames = ['JUMP', 'DOWN', 'LEFT', 'RIGHT', 'FIRE', 'PAUSE'];
-    const defaultCodes = [Phaser.Input.Keyboard.KeyCodes.SPACE, Phaser.Input.Keyboard.KeyCodes.S, Phaser.Input.Keyboard.KeyCodes.A, Phaser.Input.Keyboard.KeyCodes.D, Phaser.Input.Keyboard.KeyCodes.Q, Phaser.Input.Keyboard.KeyCodes.ESC];
+    const keyNames = ['JUMP', 'DOWN', 'LEFT', 'RIGHT', 'FIRE', 'PAUSE', 'C'];
+    const defaultCodes = [
+        Phaser.Input.Keyboard.KeyCodes.SPACE,
+        Phaser.Input.Keyboard.KeyCodes.S,
+        Phaser.Input.Keyboard.KeyCodes.A,
+        Phaser.Input.Keyboard.KeyCodes.D,
+        Phaser.Input.Keyboard.KeyCodes.Q,
+        Phaser.Input.Keyboard.KeyCodes.ESC,
+        Phaser.Input.Keyboard.KeyCodes.C
+    ];
 
     keyNames.forEach((keyName, i) => {
         const keyCode = localStorage.getItem(keyName) ? Number(localStorage.getItem(keyName)) : defaultCodes[i];
         controlKeys[keyName] = this.input.keyboard.addKey(keyCode);
     });
+
+    // Attach listener to the C key we just created in controlKeys
+    if (controlKeys.C) {
+        controlKeys.C.on('down', () => {
+            console.log('C key pressed (via controlKeys.C)');
+            cycleSkyColor();
+        });
+    } else {
+        console.error('DEBUG: controlKeys.C is undefined!');
+    }
 
     /*
     controlKeys.PAUSE.on('down', function () {
@@ -425,7 +458,23 @@ function drawWorld() {
 }
 
 function drawSky() {
-    this.add.rectangle(screenWidth, 0, worldWidth, screenHeight, isLevelOverworld ? 0x8585FF : 0x000000).setOrigin(0).depth = -1;
+    let sky = this.add.rectangle(screenWidth, 0, worldWidth, screenHeight, isLevelOverworld ? skyColors[currentSkyColorIndex] : 0x000000).setOrigin(0);
+    sky.depth = -1;
+    if (isLevelOverworld) {
+        skyBackgrounds.push(sky);
+    }
+}
+
+function cycleSkyColor() {
+    console.log('Cycling sky color. Current index:', currentSkyColorIndex);
+    currentSkyColorIndex = (currentSkyColorIndex + 1) % skyColors.length;
+    let newColor = skyColors[currentSkyColorIndex];
+    console.log('New color:', newColor.toString(16));
+    console.log('Sky backgrounds to update:', skyBackgrounds.length);
+
+    skyBackgrounds.forEach(sky => {
+        sky.setFillStyle(newColor);
+    });
 }
 
 function spawnClouds() {
@@ -741,7 +790,9 @@ function teleportToLevelEnd(player, trigger) {
         this.tpTube.body.allowGravity = false;
         this.tpTube.body.immovable = true;
         this.physics.add.collider(player, this.tpTube);
-        this.add.rectangle(worldWidth - screenWidth, 0, worldWidth, screenHeight, 0x8585FF).setOrigin(0).depth = -1;
+        let endSky = this.add.rectangle(worldWidth - screenWidth, 0, worldWidth, screenHeight, skyColors[currentSkyColorIndex]).setOrigin(0);
+        endSky.depth = -1;
+        skyBackgrounds.push(endSky);
         this.add.tileSprite(worldWidth - screenWidth, screenHeight, screenWidth, platformHeight, 'start-floorbricks').setScale(2).setOrigin(0, 0.5).depth = 2;
     }, 500);
 
@@ -768,7 +819,9 @@ function drawStartScreen() {
     const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;
 
     // Draw sky
-    this.add.rectangle(0, 0, screenWidth, screenHeight, 0x8585FF).setOrigin(0).depth = -1;
+    let startSky = this.add.rectangle(0, 0, screenWidth, screenHeight, skyColors[currentSkyColorIndex]).setOrigin(0);
+    startSky.depth = -1;
+    skyBackgrounds.push(startSky);
 
     let platform = this.add.tileSprite(0, screenHeight, screenWidth / 2, platformHeight, 'start-floorbricks').setScale(2).setOrigin(0, 0.5);
     this.physics.add.existing(platform);
