@@ -1,5 +1,5 @@
 
-const goombasVelocityX = screenWidth / 19
+const goombasVelocityX = window.GameSettings.enemySpeed;
 
 function createGoombas() {
     this.goombasGroup = this.add.group();
@@ -41,7 +41,7 @@ function checkGoombaCollision(player, goomba) {
 
     if (goomba.dead)
         return;
-    
+
     let goombaBeingStomped = player.body.touching.down && goomba.body.touching.up;
 
     if (flagRaised)
@@ -52,7 +52,7 @@ function checkGoombaCollision(player, goomba) {
             return;
         }
     }
-    
+
     if (goombaBeingStomped) {
         goomba.anims.play('goomba-hurt', true);
         goomba.body.enable = false;
@@ -72,9 +72,9 @@ function checkGoombaCollision(player, goomba) {
         }, 500);
         return;
     }
-    
+
     decreasePlayerState.call(this);
-        
+
     return;
 }
 
