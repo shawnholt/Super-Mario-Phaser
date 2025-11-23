@@ -36,3 +36,28 @@ The project is a procedural platformer. It does NOT use standard Tiled maps; it 
 ## 5. PROJECT DOCUMENTATION
 - **Feature Backlog (ROADMAP.md):** The file `ROADMAP.md` in the root directory contains all planned features, categorized by difficulty (Quick Wins, Medium Quests, Boss Level). Before implementing any major new feature, the agent should consult this file to check its status and category.
 - **Game Design Document:** See `game_design.md` for the core mechanics and structure.
+## 6. TESTING & AUTOMATION PROTOCOLS
+**CRITICAL: DO NOT OPEN NEW BROWSER TABS.**
+1.  **Hot Reload Only:** This project uses Vite. Saving a file automatically updates the running browser. NEVER run "Start Debugging" or open a new Chrome instance to test a change.
+2.  **Background Testing:** Assume the browser window is **hidden or in the background**.
+    * **FORBIDDEN:** Do not use `Input.dispatchKeyEvent` or `Input.dispatchMouseEvent` (CDP). These fail in background tabs.
+    * **REQUIRED:** Use `Runtime.evaluate` to inject JavaScript events directly:
+        ```javascript
+        window.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowRight', key: 'ArrowRight' }));
+        ```
+3.  **Verification:** When testing movement, log the `player.x` coordinate before and after the injected event to prove success.
+4.  **Robust Event Injection:** When injecting events, use comprehensive event properties to ensure Phaser detects them.
+    *   **Required Properties:** `bubbles: true`, `cancelable: true`, `view: window`, `keyCode` (legacy support).
+    *   **Target:** Dispatch to `window` (and optionally `document` if `window` fails).
+    *   **Example:**
+        ```javascript
+        const eventOptions = {
+            key: 'ArrowRight',
+            code: 'ArrowRight',
+            keyCode: 39,
+            bubbles: true,
+            cancelable: true,
+            view: window
+        };
+        window.dispatchEvent(new KeyboardEvent('keydown', eventOptions));
+        ```

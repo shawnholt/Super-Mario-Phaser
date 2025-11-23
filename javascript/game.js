@@ -378,19 +378,26 @@ function createControls() {
 // This will generate a random coordinate, that can't be within a hole
 
 function generateRandomCoordinate(entitie = false, ground = true) {
+    // 1. Calculate the range where the object can spawn
     const startPos = entitie ? screenWidth * 1.5 : screenWidth;
     const endPos = entitie ? worldWidth - screenWidth * 3 : worldWidth;
 
+    // 2. Pick a random X coordinate within that range
     let coordinate = Phaser.Math.Between(startPos, endPos);
 
+    // 3. If the object doesn't need ground (like a cloud), return the coordinate immediately
     if (!ground) return coordinate;
 
+    // 4. If it needs ground, check if the coordinate falls inside a hole
     for (let hole of worldHolesCoords) {
+        // If the coordinate is inside a hole (with some buffer space)
         if (coordinate >= hole.start - platformPiecesWidth * 1.5 && coordinate <= hole.end) {
+            // Recursively try again to find a safe spot
             return generateRandomCoordinate.call(this, entitie, ground);
         }
     }
 
+    // 5. Return the safe coordinate
     return coordinate;
 }
 
@@ -398,56 +405,90 @@ function generateRandomCoordinate(entitie = false, ground = true) {
 // World generation
 
 function drawWorld() {
-    //Drawing scenery props
+    // Drawing scenery props
 
     //> Drawing the Sky
-    this.add.rectangle(screenWidth, 0, worldWidth, screenHeight, isLevelOverworld ? 0x8585FF : 0x000000).setOrigin(0).depth = -1;
+    drawSky.call(this);
 
     let propsY = screenHeight - platformHeight;
 
     if (isLevelOverworld) {
-        //> Clouds
-        for (i = 0; i < Phaser.Math.Between(Math.trunc(worldWidth / 760), Math.trunc(worldWidth / 380)); i++) {
-            let x = generateRandomCoordinate(false, false);
-            let y = Phaser.Math.Between(screenHeight / 80, screenHeight / 2.2);
-            if (Phaser.Math.Between(0, 10) < 5) {
-                this.add.image(x, y, 'cloud1').setOrigin(0).setScale(screenHeight / 1725);
-            } else {
-                this.add.image(x, y, 'cloud2').setOrigin(0).setScale(screenHeight / 1725);
-            }
-        }
-
-        //> Mountains
-        for (i = 0; i < Phaser.Math.Between(worldWidth / 6400, worldWidth / 3800); i++) {
-            let x = generateRandomCoordinate();
-
-            if (Phaser.Math.Between(0, 10) < 5) {
-                this.add.image(x, propsY, 'mountain1').setOrigin(0, 1).setScale(screenHeight / 517);
-            } else {
-                this.add.image(x, propsY, 'mountain2').setOrigin(0, 1).setScale(screenHeight / 517);
-            }
-        }
-
-        //> Bushes
-        for (i = 0; i < Phaser.Math.Between(Math.trunc(worldWidth / 960), Math.trunc(worldWidth / 760)); i++) {
-            let x = generateRandomCoordinate();
-
-            if (Phaser.Math.Between(0, 10) < 5) {
-                this.add.image(x, propsY, 'bush1').setOrigin(0, 1).setScale(screenHeight / 609);
-            } else {
-                this.add.image(x, propsY, 'bush2').setOrigin(0, 1).setScale(screenHeight / 609);
-            }
-        }
-
-        //> Fences
-        for (i = 0; i < Phaser.Math.Between(Math.trunc(worldWidth / 4000), Math.trunc(worldWidth / 2000)); i++) {
-            let x = generateRandomCoordinate();
-
-            this.add.tileSprite(x, propsY, Phaser.Math.Between(100, 250), 35, 'fence').setOrigin(0, 1).setScale(screenHeight / 863);
-        }
+        spawnClouds.call(this);
+        spawnMountains.call(this, propsY);
+        spawnBushes.call(this, propsY);
+        spawnFences.call(this, propsY);
     }
 
-    //> Final flag
+    //> Final flag and Castle
+    spawnFinalFlag.call(this, propsY);
+    spawnCastle.call(this, propsY);
+}
+
+function drawSky() {
+    this.add.rectangle(screenWidth, 0, worldWidth, screenHeight, isLevelOverworld ? 0x8585FF : 0x000000).setOrigin(0).depth = -1;
+}
+
+function spawnClouds() {
+    const density = window.GameSettings.cloudDensity;
+    const minClouds = Math.trunc(worldWidth / density.min);
+    const maxClouds = Math.trunc(worldWidth / density.max);
+
+    for (let i = 0; i < Phaser.Math.Between(minClouds, maxClouds); i++) {
+        let cloudX = generateRandomCoordinate(false, false);
+        let cloudY = Phaser.Math.Between(screenHeight / 80, screenHeight / 2.2);
+        if (Phaser.Math.Between(0, 10) < 5) {
+            this.add.image(cloudX, cloudY, 'cloud1').setOrigin(0).setScale(screenHeight / 1725);
+        } else {
+            this.add.image(cloudX, cloudY, 'cloud2').setOrigin(0).setScale(screenHeight / 1725);
+        }
+    }
+}
+
+function spawnMountains(propsY) {
+    const density = window.GameSettings.mountainDensity;
+    const minMountains = Math.trunc(worldWidth / density.min);
+    const maxMountains = Math.trunc(worldWidth / density.max);
+
+    for (let i = 0; i < Phaser.Math.Between(minMountains, maxMountains); i++) {
+        let mountainX = generateRandomCoordinate();
+
+        if (Phaser.Math.Between(0, 10) < 5) {
+            this.add.image(mountainX, propsY, 'mountain1').setOrigin(0, 1).setScale(screenHeight / 517);
+        } else {
+            this.add.image(mountainX, propsY, 'mountain2').setOrigin(0, 1).setScale(screenHeight / 517);
+        }
+    }
+}
+
+function spawnBushes(propsY) {
+    const density = window.GameSettings.bushDensity;
+    const minBushes = Math.trunc(worldWidth / density.min);
+    const maxBushes = Math.trunc(worldWidth / density.max);
+
+    for (let i = 0; i < Phaser.Math.Between(minBushes, maxBushes); i++) {
+        let bushX = generateRandomCoordinate();
+
+        if (Phaser.Math.Between(0, 10) < 5) {
+            this.add.image(bushX, propsY, 'bush1').setOrigin(0, 1).setScale(screenHeight / 609);
+        } else {
+            this.add.image(bushX, propsY, 'bush2').setOrigin(0, 1).setScale(screenHeight / 609);
+        }
+    }
+}
+
+function spawnFences(propsY) {
+    const density = window.GameSettings.fenceDensity;
+    const minFences = Math.trunc(worldWidth / density.min);
+    const maxFences = Math.trunc(worldWidth / density.max);
+
+    for (let i = 0; i < Phaser.Math.Between(minFences, maxFences); i++) {
+        let fenceX = generateRandomCoordinate();
+
+        this.add.tileSprite(fenceX, propsY, Phaser.Math.Between(100, 250), 35, 'fence').setOrigin(0, 1).setScale(screenHeight / 863);
+    }
+}
+
+function spawnFinalFlag(propsY) {
     this.finalFlagMast = this.add.tileSprite(worldWidth - (worldWidth / 30), propsY, 16, 167, 'flag-mast').setOrigin(0, 1).setScale(screenHeight / 400);
     this.physics.add.existing(this.finalFlagMast);
     this.finalFlagMast.immovable = true;
@@ -456,11 +497,11 @@ function drawWorld() {
     this.physics.add.overlap(player, this.finalFlagMast, null, raiseFlag, this);
     this.physics.add.collider(this.platformGroup.getChildren(), this.finalFlagMast);
 
-    //> Flag
     this.finalFlag = this.add.image(worldWidth - (worldWidth / 30), propsY * 0.93, 'final-flag').setOrigin(0.5, 1);
     this.finalFlag.setScale(screenHeight / 400);
+}
 
-    //> Castle
+function spawnCastle(propsY) {
     this.add.image(worldWidth - (worldWidth / 75), propsY, 'castle').setOrigin(0.5, 1).setScale(screenHeight / 300);
 }
 
@@ -489,7 +530,8 @@ function generateLevel() {
         this.blocksGroup.add(this.undergroundRoof);
     }
 
-    for (i = 0; i <= platformPieces; i++) {
+    // Loop through the number of platform pieces to generate the level
+    for (let platformIndex = 0; platformIndex <= platformPieces; platformIndex++) {
         // Holes will have a 10% chance of spawning
         let number = Phaser.Math.Between(0, 100);
 
@@ -498,18 +540,19 @@ function generateLevel() {
             lastWasHole--;
 
             //> Create platform
-            let Npiece = this.add.tileSprite(pieceStart, screenHeight, platformPiecesWidth, platformHeight, 'floorbricks').setScale(2).setOrigin(0, 0.5);
-            this.physics.add.existing(Npiece);
-            Npiece.body.immovable = true;
-            Npiece.body.allowGravity = false;
-            Npiece.isPlatform = true;
-            Npiece.depth = 2;
-            this.platformGroup.add(Npiece);
+            let newPlatformPiece = this.add.tileSprite(pieceStart, screenHeight, platformPiecesWidth, platformHeight, 'floorbricks').setScale(2).setOrigin(0, 0.5);
+            this.physics.add.existing(newPlatformPiece);
+            newPlatformPiece.body.immovable = true;
+            newPlatformPiece.body.allowGravity = false;
+            newPlatformPiece.isPlatform = true;
+            newPlatformPiece.depth = 2;
+            this.platformGroup.add(newPlatformPiece);
             // Apply player collision with platform
-            this.physics.add.collider(player, Npiece);
+            this.physics.add.collider(player, newPlatformPiece);
 
             //> Creating world structures
 
+            // If it's a valid spot for a structure (not near start/end, not after a hole/structure)
             if (!(pieceStart >= (worldWidth - screenWidth * (isLevelOverworld ? 1 : 1.5))) && pieceStart > (screenWidth + platformPiecesWidth * 2) && lastWasHole < 1 && lastWasStructure < 1) {
                 lastWasStructure = generateStructure.call(this, pieceStart);
             }

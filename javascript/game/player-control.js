@@ -111,11 +111,16 @@ function updatePlayer(delta) {
     // https://github.com/photonstorm/phaser3-examples/blob/master/public/src/tilemap/collision/matter%20destroy%20tile%20bodies.js#L323
     // https://codepen.io/rexrainbow/pen/oyqvQY
 
+    // Initialize cursors if they don't exist
+    if (!this.cursors) {
+        this.cursors = this.input.keyboard.createCursorKeys();
+    }
+
     // > Vertical movement
-    if ((controlKeys.JUMP.isDown || this.joyStick.up) && player.body.touching.down) {
+    if ((controlKeys.JUMP.isDown || this.joyStick.up || this.cursors.up.isDown) && player.body.touching.down) {
         console.log('🚀 JUMPING with force:', window.GameSettings.jumpForce);
         this.jumpSound.play();
-        (playerState > 0 && (controlKeys.DOWN.isDown || this.joyStick.down)) ? player.setVelocityY(-window.GameSettings.jumpForce / 1.25) : player.setVelocityY(-window.GameSettings.jumpForce);
+        (playerState > 0 && (controlKeys.DOWN.isDown || this.joyStick.down || this.cursors.down.isDown)) ? player.setVelocityY(-window.GameSettings.jumpForce / 1.25) : player.setVelocityY(-window.GameSettings.jumpForce);
     }
 
     // > Horizontal movement and animations
@@ -123,7 +128,7 @@ function updatePlayer(delta) {
     let targetVelocityX;
     let newVelocityX;
 
-    if (controlKeys.LEFT.isDown || this.joyStick.left) {
+    if (controlKeys.LEFT.isDown || this.joyStick.left || this.cursors.left.isDown) {
         smoothedControls.moveLeft(delta);
         if (!playerFiring) {
             if (playerState == 0)
@@ -145,7 +150,7 @@ function updatePlayer(delta) {
         newVelocityX = Phaser.Math.Linear(oldVelocityX, targetVelocityX, -smoothedControls.value);
 
         player.setVelocityX(newVelocityX);
-    } else if (controlKeys.RIGHT.isDown || this.joyStick.right) {
+    } else if (controlKeys.RIGHT.isDown || this.joyStick.right || this.cursors.right.isDown) {
         smoothedControls.moveRight(delta);
         if (!playerFiring) {
             if (playerState == 0)
@@ -172,7 +177,7 @@ function updatePlayer(delta) {
             smoothedControls.reset();
         if (player.body.touching.down)
             player.setVelocityX(0);
-        if (!(controlKeys.JUMP.isDown || this.joyStick.up) && !playerFiring) {
+        if (!(controlKeys.JUMP.isDown || this.joyStick.up || this.cursors.up.isDown) && !playerFiring) {
             if (playerState == 0)
                 player.anims.play('idle', true);
 
@@ -185,7 +190,7 @@ function updatePlayer(delta) {
     }
 
     if (!playerFiring) {
-        if (playerState > 0 && (controlKeys.DOWN.isDown || this.joyStick.down)) {
+        if (playerState > 0 && (controlKeys.DOWN.isDown || this.joyStick.down || this.cursors.down.isDown)) {
             if (playerState == 1)
                 player.anims.play('grown-mario-crouch', true);
 

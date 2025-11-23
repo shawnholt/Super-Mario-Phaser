@@ -8,7 +8,13 @@ window.GameSettings = {
     jumpForce: _jumpForce,
     gravity: _jumpForce * 2,
     playerSpeed: _screenWidth / 4.5,
-    enemySpeed: _screenWidth / 19
+    enemySpeed: _screenWidth / 19,
+
+    // World Generation Settings
+    cloudDensity: { min: 760, max: 380 }, // Higher divisor = fewer clouds
+    mountainDensity: { min: 6400, max: 3800 },
+    bushDensity: { min: 960, max: 760 },
+    fenceDensity: { min: 4000, max: 2000 }
 };
 
 console.log('DEBUG: Gravity loaded:', window.GameSettings.gravity);
