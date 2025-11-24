@@ -1,94 +1,149 @@
 # Incremental Refactor & Test Playbook for AI Agents
 
-This document is for **automated or semi-automated IDE agents** that struggle with large edits. It breaks work into tiny, verifiable phases so changes can be applied in batch and checked in the browser without feedback loops.
+Audience: AI/IDE agents and humans pairing with them. Tone: teacherly, low jargon. Visual-first changes are welcome, but every step must keep current gameplay intact.
 
-## Goals
-- Preserve current gameplay while making the code easier to modify in small, safe steps.
-- Add **tests you can run from the browser console** (no new frameworks).
-- Reduce global coupling gradually; never attempt sweeping refactors in one go.
+## 1) Purpose & Goals
+- Keep the game playable while making code easier to tweak in tiny, verifiable steps.
+- Favor observable results (movement, sky color, HUD) over deep architecture sweeps.
+- Add lightweight checks that can run from the browser console—no new build steps or frameworks.
+- Reduce risk gradually; globals stay for now.
 
-## Operating Constraints
-- Keep Vite hot-reload workflow. Do **not** add build steps or new tooling.
-- Respect existing globals and `.call(this)` patterns; only extract code when tests are in place.
-- Make one phase at a time, commit, then re-run smoke checks before continuing.
+## 2) Scope & Invariants (do not break)
+- Globals that must exist: `player`, `score`, `timeLeft`, `controlKeys`, `worldHolesCoords`, `platformGroup`, `goombasGroup`, music/effects groups, `playerState`, `playerBlocked`, `playerInvulnerable`, `playerFiring`, `fireInCooldown`, `smoothedControls`.
+- Context contract: many helpers rely on `.call(this)`; preserve that pattern when moving code.
+- Input surfaces must remain: `controlKeys` (configurable), `this.cursors` (Phaser defaults), Rex virtual joystick.
+- DOM hooks: loading GIF elements, canvas for screenshots.
+- Physics/timers: invulnerability blink timers, fireball lifespan, HUD timer recursion, tween-based transitions.
 
-## Baseline Smoke Checklist (run before and after each phase)
-1. **Load game:** Open `localhost:5173`, confirm no console errors.
-2. **Spawn & idle:** Mario appears, timer and score render.
-3. **Move right:** Inject one key press in console and log `player.x` before/after:
-    ```js
-    console.log('before', player.x);
-    const opts = { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39, bubbles: true, cancelable: true, view: window };
-    window.dispatchEvent(new KeyboardEvent('keydown', opts));
-    setTimeout(() => console.log('after', player.x), 250);
-    ```
-4. **Jump:** Repeat with `Space` (keyCode `32`), confirm `player.body.velocity.y` becomes negative.
-5. **Enemy contact:** Walk into first Goomba; Mario should take damage or stomp depending on velocity.
-6. **Win/lose transitions:** If time permits, run into a pit (game over) and reach flagpole (win) to ensure scenes still trigger.
+## 3) Safety Rails for Agents
+- Work one micro-change at a time; reload tab after each save (Vite hot reload only).
+- Before you start: run the Baseline Smoke (below) and log outputs.
+- Abort/revert triggers: camera stops following, `timeLeft` stops ticking, inputs unresponsive, music overlaps, sky color stops cycling, fireballs never expire, Goombas freeze or vanish too fast.
+- Keep log prefixes like `SMOKE:` or `CHECK:` for automated parsing.
 
-Record console outputs; the agent can parse logs to validate each step.
+## 4) Hot Reload & Testing Recipe (per AGENTS)
+- Never open new browser tabs. Use the existing Vite tab.
+- Inject events via `window.dispatchEvent(new KeyboardEvent(...))`; required props: `key`, `code`, `keyCode`, `bubbles: true`, `cancelable: true`, `view: window`. Target `window` (and `document` if needed).
+- Log before/after values (e.g., `player.x`, `player.body.velocity.y`) to prove behavior.
+- Pair keydown/keyup in tests; allow ~200–300ms before reading the after value.
 
-## Phase Plan
+## 5) Console Microtests (copy/paste friendly)
+- Move right:
+  ```js
+  console.groupCollapsed('SMOKE: move-right');
+  console.log('before x', player.x);
+  const o = {key:'ArrowRight', code:'ArrowRight', keyCode:39, bubbles:true, cancelable:true, view:window};
+  window.dispatchEvent(new KeyboardEvent('keydown', o));
+  setTimeout(() => {
+    window.dispatchEvent(new KeyboardEvent('keyup', o));
+    console.log('after x', player.x);
+    console.groupEnd();
+  }, 250);
+  ```
+- Jump:
+  ```js
+  console.groupCollapsed('SMOKE: jump');
+  console.log('before vy', player.body.velocity.y);
+  const j = {key:' ', code:'Space', keyCode:32, bubbles:true, cancelable:true, view:window};
+  window.dispatchEvent(new KeyboardEvent('keydown', j));
+  setTimeout(() => {
+    console.log('after vy', player.body.velocity.y);
+    window.dispatchEvent(new KeyboardEvent('keyup', j));
+    console.groupEnd();
+  }, 200);
+  ```
+- Fireball (requires fire state):
+  ```js
+  console.groupCollapsed('SMOKE: fireball');
+  const f = {key:'q', code:'KeyQ', keyCode:81, bubbles:true, cancelable:true, view:window};
+  console.log('goombas', (this && this.goombasGroup) ? this.goombasGroup.getChildren().length : 'n/a');
+  window.dispatchEvent(new KeyboardEvent('keydown', f));
+  setTimeout(() => window.dispatchEvent(new KeyboardEvent('keyup', f)), 150);
+  setTimeout(() => console.log('fireball test done (should despawn by 3s)'), 3200);
+  console.groupEnd();
+  ```
+- Seed logging (once seed mode exists): `console.log('seed', window.__levelSeed, 'holes', worldHolesCoords.length);`
+- Screenshot (if helper is present): `getScreenshot();`
 
-### Phase 0 – Baseline Documentation Hooks
-- Add brief comments marking section boundaries in `javascript/game.js` (preload, create, update, HUD, level gen). Do not move code.
-- Add TODO anchors (e.g., `// TODO: refactor: player-setup`) for future searchability.
-- **Test:** Run Baseline Smoke Checklist.
+## 6) Baseline Smoke Checklist (run before/after each phase)
+1. Load `localhost:5173`, confirm no console errors.
+2. Spawn & idle: Mario renders; timer and score show.
+3. Move right: run “Move right” microtest; confirm `after x > before x`.
+4. Jump: run “Jump” microtest; confirm velocity becomes negative.
+5. Enemy contact: walk into first Goomba; expect stomp when landing on top, damage on side.
+6. Win/lose transitions (time permitting): fall in a pit for game over; reach flag/tube for win animation.
+Record console outputs for comparison.
 
-### Phase 1 – Extract Constants Safely
-- Introduce a new file `javascript/constants.js` with **only** readonly values (speeds, gravity, timing) copied from current code.
-- Replace inline literals in `game.js` and `player-control.js` with imports **one constant at a time** to avoid drift.
-- Keep defaults identical; avoid behavioral change.
-- **Test:** Baseline + confirm numbers match by logging a sample constant in console (e.g., `console.log(window.gameConstants)`).
+## 7) Risk Register (watch these when refactoring)
+- Start screen triggers: gear block opens settings; initial camera bounds differ from level bounds.
+- Teleport tube (underground) and flag raise sequence: camera follow toggles, fades, tweens, music swaps.
+- HUD timer recursion and hurry-up music at `timeLeft === 100`.
+- Invulnerability blink timers (`applyPlayerInvulnerability`), fireball lifespan and bounce logic.
+- Goomba cleanup (`clearGoombas`) removing idle/frozen enemies—easy to break with velocity changes.
+- Sky color cycling via `C` key/gear block; uses `skyBackgrounds` array.
 
-### Phase 2 – Isolate Input Mapping
-- Create `javascript/input-map.js` exporting key bindings and a helper to register them.
-- Update `game.js` to consume the helper while retaining current `this.input.keyboard.addKeys` semantics.
-- Ensure global variables for controls remain available for dependents.
-- **Test:** Baseline + add console check that `controls` object has expected keys and that injected events still move Mario.
+## 8) Module Map (for quick search)
+- Monolith: `javascript/game.js` (preload/create/update, level gen, camera, audio, sky, start/win/lose).
+- Player: `javascript/game/player-control.js` (movement, crouch/firing, state loss).
+- Enemies: `javascript/game/entities-control.js` (Goomba spawn/collision/cleanup).
+- Blocks & power-ups: `javascript/game/blocks.js`.
+- Projectiles: `javascript/game/fireball.js`.
+- HUD & screens: `javascript/game/hud-control.js`.
+- Animations: `javascript/game/animations.js`.
+- Level patterns: `javascript/game/strucutres.js`.
+- Settings UI & GameSettings: `javascript/game/settings.js` and `javascript/settings.js` (keep globals intact).
 
-### Phase 3 – HUD/Timer Separation
-- Move HUD-related code (score/time text creation and updates) into `javascript/hud.js` with functions `createHud(scene)` and `updateHud(scene)`.
-- Replace in `game.js` by calling these helpers inside `create`/`update`. Keep signatures `(scene)` and ensure `.call(this)` context is respected.
-- **Test:** Baseline + verify score/time update when collecting a coin and as time decreases (watch console logs if needed).
+## 9) Phase Plan (Pareto-friendly)
+- **Phase 0 — Instrument & Anchor**
+  - Add brief section comments in `game.js` (preload, create, update, level gen, HUD/audio hooks).
+  - Add `// TODO: refactor: ...` anchors for future search.
+  - Add `console.assert` for critical globals in `create`/`update` (player, controls, groups).
+  - Test: Baseline Smoke.
+- **Phase 1 — Constants Extraction**
+  - Create `javascript/constants.js` with readonly values (speeds, gravity, timings) copied from current code.
+  - Swap literals one-at-a-time in `game.js` and `player-control.js`; log `window.gameConstants` in console to verify.
+  - Test: Baseline + console check.
+- **Phase 2 — Input Map Isolation**
+  - Add `javascript/input-map.js` exporting key bindings and a helper returning `controlKeys` while keeping globals and Rex/cursors intact.
+  - Update `game.js` to use helper but preserve `controlKeys` shape and existing joystick/cursor paths.
+  - Test: Baseline + Move/Jump microtests.
+- **Phase 3 — HUD/Timer Module**
+  - Extract HUD into `javascript/hud.js` (`createHud(scene)`, `updateHud(scene)`, `addToScore(scene, num, origin)`), respecting `.call(this)` usage.
+  - Wire `create`/`update` to the helpers.
+  - Test: Baseline + coin pickup updates score; timer counts down.
+- **Phase 4 — Enemy Encapsulation**
+  - Wrap Goomba creation/update/cleanup in helper functions and call from `game.js`.
+  - Keep velocities, collisions, and cleanup behavior identical.
+  - Test: Baseline + stomp vs side-hit.
+- **Phase 5 — Player Lifecycle Helpers**
+  - In `player-control.js`, extract grow/shrink/fire helpers; reuse internally without changing hitboxes/animations.
+  - Test: Baseline + mushroom/flower pickup and damage.
+- **Phase 6 — Level Generation Wrapper**
+  - Move level generation to `javascript/level-gen.js` with current RNG; pass needed globals explicitly.
+  - Optionally log platform count/hole coords for comparison.
+  - Test: Baseline + layout log check.
+- **Phase 7 — Deterministic Seed Toggle (optional but recommended)**
+  - Add `?seed=` query param support in `game.js` and use a tiny PRNG for level gen when present.
+  - Log seed and generated platform/hole counts.
+  - Test: Run `/?seed=1` twice; logs should match.
+- **Phase 8 — Cleanup & Docs**
+  - Keep assertions/log groups; remove dead anchors used.
+  - Add README note on Baseline Smoke and seed mode.
+  - Test: Baseline.
 
-### Phase 4 – Enemy Logic Encapsulation
-- Keep `entities-control.js` but wrap enemy creation/update in exported functions (`spawnGoombas(scene, platforms)` and `updateGoombas(scene)`).
-- Replace direct logic in `game.js` with these calls, passing existing globals explicitly. Avoid altering physics settings.
-- **Test:** Baseline + confirm Goombas still patrol and collisions behave.
+## 10) Debugging Tips
+- When inputs fail: log `controlKeys`, `this.cursors`, joystick state; re-run Move/Jump microtests.
+- When physics feels off: log `player.body.blocked`, `playerBlocked`, `player.body.velocity`.
+- For audio overlap: log which music tracks are playing; ensure only one loop is active.
+- Keep `console.groupCollapsed` around noisy logs to reduce clutter.
 
-### Phase 5 – Player Lifecycle Separation
-- In `player-control.js`, extract state-change helpers (grow, shrink, fire) into named functions; export them for clarity.
-- Update internal calls to use the new helpers without changing globals or animations.
-- **Test:** Baseline + collect mushroom/flower to confirm state transitions and damage handling.
+## 11) Batch Execution Strategy
+1. Apply one phase per commit.
+2. After each save: reload tab (hot reload) and run Baseline Smoke + relevant microtests.
+3. Capture console logs (before/after positions, velocities, collision messages).
+4. Proceed only if all checks pass; if not, revert the phase and re-apply with smaller diffs.
 
-### Phase 6 – Level Generation Hooks
-- Wrap level generation code in `javascript/level-gen.js` with pure-ish functions that accept RNG seeds/options.
-- Initially call with the current defaults to keep randomness consistent; later phases can add deterministic seeds for testing.
-- **Test:** Baseline + log generated platform counts to console to compare against pre-refactor runs.
-
-### Phase 7 – Deterministic Testing Mode (Optional but Recommended)
-- Add a query param toggle (e.g., `?seed=123`) read in `game.js` to seed RNG for repeatable tests using a small PRNG (no new deps).
-- When seed is present, log it and ensure level generation uses it; otherwise retain existing randomness.
-- **Test:** Run with `localhost:5173/?seed=1` twice and confirm platform layout logs match.
-
-### Phase 8 – Cleanup and Guardrails
-- Add lightweight runtime assertions (simple `console.assert`) around critical globals (player, platforms) in `create` and `update`.
-- Add a short `README` section describing how to use the Baseline Smoke Checklist and seeded runs.
-- **Test:** Baseline; ensure assertions do not trigger under normal play.
-
-## Debugging Tips for Agents
-- Favor **search-and-replace for one literal at a time**; verify after each swap.
-- When imports fail, check relative paths and confirm Vite reload shows no 404s in the console.
-- Use `console.groupCollapsed` blocks to keep automated logs tidy.
-- If a change breaks input, first log `this.input.keyboard` and the `controls` object, then trigger injected events to confirm wiring.
-- If physics misbehaves after refactors, log `player.body.blocked` and `playerBlocked` flags each frame for a few seconds.
-
-## Batch Execution Strategy
-- Apply one phase per commit. After each commit:
-  1. Reload the game tab.
-  2. Run Baseline Smoke Checklist.
-  3. Capture console logs (before/after positions, velocities, collision messages).
-- Proceed to the next phase only if all checks pass. If a check fails, revert to previous commit and re-apply with smaller diffs.
-
-Sticking to these steps keeps the refactor safe, observable, and friendly to automated IDE agents.
+## 12) Rollback & Recovery
+- If a phase fails a smoke test, undo just that phase (git checkout of touched files) and retry with smaller, single-literal swaps.
+- Keep a running log of console outputs per phase to spot drift early.
+- If camera or timer stops, first restore assertions and anchor comments to locate the regression, then re-run tests.
