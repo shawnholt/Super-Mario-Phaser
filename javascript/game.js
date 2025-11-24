@@ -127,6 +127,7 @@ var SmoothedHorionztalControl = new Phaser.Class({
     }
 });
 
+// --- PRELOAD ---
 function preload() {
 
     var progressBox = this.add.graphics();
@@ -319,6 +320,7 @@ function initSounds() {
     this.effectsGroup.add(this.breakBlockSound);
 }
 
+// --- CREATE ---
 function create() {
     playerController = {
         time: {
@@ -355,6 +357,8 @@ function create() {
 
     smoothedControls = new SmoothedHorionztalControl(0.001);
 
+    console.assert(player, 'Player not initialized');
+    console.assert(this.platformGroup, 'Platform group not initialized');
 }
 
 function createControls() {
@@ -983,7 +987,10 @@ function collectCoin(player, coin) {
     coin.destroy();
 }
 
+// --- UPDATE ---
 function update(delta) {
+    console.assert(player, 'Player missing in update');
+    console.assert(this.platformGroup, 'Platform group missing in update');
     if (gameOver || gameWinned) return;
 
     updatePlayer.call(this, delta);

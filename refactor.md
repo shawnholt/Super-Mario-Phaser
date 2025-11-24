@@ -47,7 +47,7 @@ This is a phased approach that prioritizes safety and delivers value to the AI a
 
 ### Phase 4: Safe Modularization
 **Goal:** Break apart the monolith into logical modules without performing risky deep rewrites.
--   **Action:** Following the patterns in the original `refactor-old.md`, extract logic for HUD, Enemies, Player Lifecycle, and Level Generation into their own files (`hud-control.js`, `entities-control.js`, etc.).
+-   **Action:** Following the original coding patterns, extract logic for HUD, Enemies, Player Lifecycle, and Level Generation into their own files (`hud-control.js`, `entities-control.js`, etc.).
 -   **Action:** These new modules will be called from `game.js` using `.call(this)` to preserve the Phaser scene context. The focus is on moving code, not re-architecting it.
 
 ### Phase 5: Stabilizing the Game Loop (Carefully)
@@ -62,7 +62,7 @@ This is a phased approach that prioritizes safety and delivers value to the AI a
 -   **Action:** Remove any temporary code or `//TODO` comments that are no longer relevant.
 
 ## 4. Verification Strategy
-A robust testing process combines manual checks with the new agent-centric tools. The `Baseline Smoke Checklist` from `refactor-old.md` remains the standard for manual verification after each phase.
+A robust testing process combines manual checks with the new agent-centric tools. The **`Baseline Smoke Checklist`** (found in the Appendix) is the standard for manual verification after each phase.
 
 An AI agent's preferred testing loop will now be:
 1.  Navigate to a URL with a known seed: `localhost:5173/?seed=123`.
@@ -72,9 +72,57 @@ An AI agent's preferred testing loop will now be:
 5.  Call `window.AgentHelpers.getGameState()` again to get the final state.
 6.  Compare the initial and final states to verify the outcome. Because the level layout and game logic are now deterministic, this test will produce the same result every time.
 
-## 5. Risk Register
-The detailed risk register from `refactor-old.md` remains highly relevant. Key areas to watch during any change are:
--   Camera logic during teleportation and at the final flag.
--   The `timeLeft === 100` "hurry-up" music trigger.
--   Invulnerability blink timers and fireball lifespan/bounce logic.
--   Goomba cleanup logic.
+---
+## 5. Appendix: Protocols, Checklists, and Invariants
+
+This appendix contains the detailed information required to safely test and verify the refactoring at each phase.
+
+### 5.1. Scope & Invariants (Do Not Break)
+-   **Globals that must exist:** `player`, `score`, `timeLeft`, `controlKeys`, `worldHolesCoords`, `platformGroup`, `goombasGroup`, music/effects groups, `playerState`, `playerBlocked`, `playerInvulnerable`, `playerFiring`, `fireInCooldown`, `smoothedControls`.
+-   **Context contract:** Many helpers rely on `.call(this)`; preserve that pattern when moving code.
+-   **Input surfaces must remain:** `controlKeys` (configurable), `this.cursors` (Phaser defaults), Rex virtual joystick.
+-   **DOM hooks:** loading GIF elements, canvas for screenshots.
+-   **Physics/timers:** invulnerability blink timers, fireball lifespan, HUD timer recursion, tween-based transitions must have their timing preserved.
+
+### 5.2. Baseline Smoke Checklist (Run after each phase)
+1.  Load `localhost:5173`, confirm no console errors.
+2.  Spawn & idle: Mario renders; timer and score show.
+3.  Move right: run “Move right” microtest (see below); confirm `after x > before x`.
+4.  Jump: run “Jump” microtest; confirm velocity becomes negative.
+5.  Enemy contact: walk into first Goomba; expect stomp when landing on top, damage on side.
+6.  Win/lose transitions (time permitting): fall in a pit for game over; reach flag/tube for win animation.
+*Record console outputs for comparison.*
+
+### 5.3. Console Microtests (For Bootstrap Verification)
+Use these snippets in the browser console to test basic functionality before the `AgentHelpers` API is built.
+
+-   **Move right:**
+    ```js
+    console.groupCollapsed('SMOKE: move-right');
+    console.log('before x', player.x);
+    const o = {key:'ArrowRight', code:'ArrowRight', keyCode:39, bubbles:true, cancelable:true, view:window};
+    window.dispatchEvent(new KeyboardEvent('keydown', o));
+    setTimeout(() => {
+      window.dispatchEvent(new KeyboardEvent('keyup', o));
+      console.log('after x', player.x);
+      console.groupEnd();
+    }, 250);
+    ```
+-   **Jump:**
+    ```js
+    console.groupCollapsed('SMOKE: jump');
+    console.log('before vy', player.body.velocity.y);
+    const j = {key:' ', code:'Space', keyCode:32, bubbles:true, cancelable:true, view:window};
+    window.dispatchEvent(new KeyboardEvent('keydown', j));
+    setTimeout(() => {
+      console.log('after vy', player.body.velocity.y);
+      window.dispatchEvent(new KeyboardEvent('keyup', j));
+      console.groupEnd();
+    }, 200);
+    ```
+
+### 5.4. Risk Register (Key areas to watch)
+-   **Transitions:** Start screen triggers, teleport tube sequences, and the final flag raise. These involve camera toggles, fades, tweens, and music swaps that are easy to break.
+-   **Timers:** The HUD timer recursion (especially the hurry-up music at `timeLeft === 100`), player invulnerability blinks, and fireball lifespan/bounce logic.
+-   **Enemy Logic:** Goomba cleanup (`clearGoombas`) can be sensitive to velocity changes.
+-   **Scenery:** The sky color cycling logic.
