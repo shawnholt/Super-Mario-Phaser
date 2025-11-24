@@ -2,19 +2,19 @@ const loadingGif = document.querySelectorAll('.loading-gif');
 
 const mobileDevice = isMobileDevice();
 
-const screenWidth = window.innerWidth;
-const screenHeight = window.innerHeight * 1.1;
+const screenWidth = window.GameConstants.ScreenWidth;
+const screenHeight = window.GameConstants.ScreenHeight;
 
-const velocityX = window.GameSettings.playerSpeed;
-const velocityY = screenHeight / 1.15;
+const velocityX = window.GameConstants.PlayerSpeed;
+const velocityY = window.GameConstants.JumpForce;
 
-const levelGravity = window.GameSettings.gravity;
+const levelGravity = window.GameConstants.Gravity;
 
 var config = {
     type: Phaser.AUTO,
     width: screenWidth,
     height: screenHeight,
-    backgroundColor: 0x8585FF,
+    backgroundColor: window.GameConstants.Colors.DefaultBackground,
     parent: 'game',
     preserveDrawingBuffer: true,
     physics: {
@@ -33,13 +33,13 @@ var config = {
     version: '0.7.3'
 };
 
-const worldWidth = screenWidth * 11;
-const platformHeight = screenHeight / 5;
+const worldWidth = window.GameConstants.WorldWidth;
+const platformHeight = window.GameConstants.PlatformHeight;
 
-const startOffset = screenWidth / 2.5;
+const startOffset = window.GameConstants.StartOffset;
 
 // Hole with is calculated dividing the world width in x holes of the same size.
-const platformPieces = 100;
+const platformPieces = window.GameConstants.PlatformPieces;
 const platformPiecesWidth = (worldWidth - screenWidth) / platformPieces;
 
 var isLevelOverworld;
@@ -71,7 +71,7 @@ var controlKeys = {
 };
 
 var score = 0;
-var timeLeft = 300;
+var timeLeft = window.GameConstants.TimeLimit;
 
 var levelStarted = false;
 var reachedLevelEnd = false;
@@ -80,14 +80,7 @@ var smoothedControls;
 var gameOver = false;
 var gameWinned = false;
 
-var skyColors = [
-    0x8585FF, // Default Blue
-    0xFF8C00, // Sunset Orange
-    0x000000, // Night Black
-    0x663399, // Alien Purple
-    0x00BFFF, // Deep Sky Blue
-    0xFF69B4  // Hot Pink
-];
+var skyColors = window.GameConstants.Colors.SkyColors;
 var currentSkyColorIndex = 0;
 var skyBackgrounds = [];
 
