@@ -1,5 +1,5 @@
 
-const goombasVelocityX = window.GameSettings.enemySpeed;
+const goombasVelocityX = window.GameConstants.EnemySpeed;
 
 function createGoombas() {
     this.goombasGroup = this.add.group();

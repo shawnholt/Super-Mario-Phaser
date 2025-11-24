@@ -64,14 +64,4 @@ window.GameConstants = {
     }
 };
 
-// Backwards compatibility for now, or just use GameConstants everywhere
-window.GameSettings = {
-    jumpForce: window.GameConstants.JumpForce,
-    gravity: window.GameConstants.Gravity,
-    playerSpeed: window.GameConstants.PlayerSpeed,
-    enemySpeed: window.GameConstants.EnemySpeed,
-    cloudDensity: window.GameConstants.Densities.Cloud,
-    mountainDensity: window.GameConstants.Densities.Mountain,
-    bushDensity: window.GameConstants.Densities.Bush,
-    fenceDensity: window.GameConstants.Densities.Fence
-};
+

@@ -6,16 +6,20 @@
     let rngCallCount = 0;
 
     if (seedParam) {
-        console.log('Using seeded RNG with seed:', seedParam);
-        useSeededRNG = true;
         let s = parseInt(seedParam);
-        // Mulberry32
-        seededRNG = function () {
-            var t = s += 0x6D2B79F5;
-            t = Math.imul(t ^ t >>> 15, t | 1);
-            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-            return ((t ^ t >>> 14) >>> 0) / 4294967296;
-        };
+        if (!isNaN(s)) {
+            console.log('Using seeded RNG with seed:', seedParam);
+            useSeededRNG = true;
+            // Mulberry32
+            seededRNG = function () {
+                var t = s += 0x6D2B79F5;
+                t = Math.imul(t ^ t >>> 15, t | 1);
+                t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        } else {
+            console.warn('Invalid seed parameter:', seedParam, '- falling back to Math.random()');
+        }
     }
 
     window.randomBetween = function (min, max) {

@@ -118,9 +118,9 @@ function updatePlayer(delta) {
 
     // > Vertical movement
     if ((controlKeys.JUMP.isDown || this.joyStick.up || this.cursors.up.isDown) && player.body.touching.down) {
-        console.log('🚀 JUMPING with force:', window.GameSettings.jumpForce);
+        console.log('🚀 JUMPING with force:', window.GameConstants.JumpForce);
         this.jumpSound.play();
-        (playerState > 0 && (controlKeys.DOWN.isDown || this.joyStick.down || this.cursors.down.isDown)) ? player.setVelocityY(-window.GameSettings.jumpForce / 1.25) : player.setVelocityY(-window.GameSettings.jumpForce);
+        (playerState > 0 && (controlKeys.DOWN.isDown || this.joyStick.down || this.cursors.down.isDown)) ? player.setVelocityY(-window.GameConstants.JumpForce / 1.25) : player.setVelocityY(-window.GameConstants.JumpForce);
     }
 
     // > Horizontal movement and animations
