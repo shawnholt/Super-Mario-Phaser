@@ -165,7 +165,7 @@ function preload() {
     this.load.plugin('rexsliderplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexsliderplugin.min.js', true);
     this.load.plugin('rexkawaseblurpipelineplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexkawaseblurpipelineplugin.min.js', true);
 
-    isLevelOverworld = Phaser.Math.Between(0, 100) <= 84;
+    isLevelOverworld = randomBetween(0, 100) <= 84;
 
     let levelStyle = isLevelOverworld ? 'overworld' : 'underground';
 
@@ -244,7 +244,7 @@ function preload() {
     this.load.audio('fireball', 'assets/sound/effects/fireball.mp3');
     this.load.audio('kick', 'assets/sound/effects/kick.mp3');
     this.load.audio('time-warning', 'assets/sound/effects/time-warning.mp3');
-    this.load.audio('here-we-go', Phaser.Math.Between(0, 100) < 98 ? 'assets/sound/effects/here-we-go.mp3' : 'assets/sound/effects/cursed-here-we-go.mp3');
+    this.load.audio('here-we-go', randomBetween(0, 100) < 98 ? 'assets/sound/effects/here-we-go.mp3' : 'assets/sound/effects/cursed-here-we-go.mp3');
     this.load.audio('pauseSound', 'assets/sound/effects/pause.wav');
     this.load.audio('block-bump', 'assets/sound/effects/block-bump.wav');
     this.load.audio('break-block', 'assets/sound/effects/break-block.wav');
@@ -413,7 +413,7 @@ function generateRandomCoordinate(entitie = false, ground = true) {
     const endPos = entitie ? worldWidth - screenWidth * 3 : worldWidth;
 
     // 2. Pick a random X coordinate within that range
-    let coordinate = Phaser.Math.Between(startPos, endPos);
+    let coordinate = randomBetween(startPos, endPos);
 
     // 3. If the object doesn't need ground (like a cloud), return the coordinate immediately
     if (!ground) return coordinate;
@@ -479,10 +479,10 @@ function spawnClouds() {
     const minClouds = Math.trunc(worldWidth / density.min);
     const maxClouds = Math.trunc(worldWidth / density.max);
 
-    for (let i = 0; i < Phaser.Math.Between(minClouds, maxClouds); i++) {
+    for (let i = 0; i < randomBetween(minClouds, maxClouds); i++) {
         let cloudX = generateRandomCoordinate(false, false);
-        let cloudY = Phaser.Math.Between(screenHeight / 80, screenHeight / 2.2);
-        if (Phaser.Math.Between(0, 10) < 5) {
+        let cloudY = randomBetween(screenHeight / 80, screenHeight / 2.2);
+        if (randomBetween(0, 10) < 5) {
             this.add.image(cloudX, cloudY, 'cloud1').setOrigin(0).setScale(screenHeight / 1725);
         } else {
             this.add.image(cloudX, cloudY, 'cloud2').setOrigin(0).setScale(screenHeight / 1725);
@@ -495,10 +495,10 @@ function spawnMountains(propsY) {
     const minMountains = Math.trunc(worldWidth / density.min);
     const maxMountains = Math.trunc(worldWidth / density.max);
 
-    for (let i = 0; i < Phaser.Math.Between(minMountains, maxMountains); i++) {
+    for (let i = 0; i < randomBetween(minMountains, maxMountains); i++) {
         let mountainX = generateRandomCoordinate();
 
-        if (Phaser.Math.Between(0, 10) < 5) {
+        if (randomBetween(0, 10) < 5) {
             this.add.image(mountainX, propsY, 'mountain1').setOrigin(0, 1).setScale(screenHeight / 517);
         } else {
             this.add.image(mountainX, propsY, 'mountain2').setOrigin(0, 1).setScale(screenHeight / 517);
@@ -511,10 +511,10 @@ function spawnBushes(propsY) {
     const minBushes = Math.trunc(worldWidth / density.min);
     const maxBushes = Math.trunc(worldWidth / density.max);
 
-    for (let i = 0; i < Phaser.Math.Between(minBushes, maxBushes); i++) {
+    for (let i = 0; i < randomBetween(minBushes, maxBushes); i++) {
         let bushX = generateRandomCoordinate();
 
-        if (Phaser.Math.Between(0, 10) < 5) {
+        if (randomBetween(0, 10) < 5) {
             this.add.image(bushX, propsY, 'bush1').setOrigin(0, 1).setScale(screenHeight / 609);
         } else {
             this.add.image(bushX, propsY, 'bush2').setOrigin(0, 1).setScale(screenHeight / 609);
@@ -527,10 +527,10 @@ function spawnFences(propsY) {
     const minFences = Math.trunc(worldWidth / density.min);
     const maxFences = Math.trunc(worldWidth / density.max);
 
-    for (let i = 0; i < Phaser.Math.Between(minFences, maxFences); i++) {
+    for (let i = 0; i < randomBetween(minFences, maxFences); i++) {
         let fenceX = generateRandomCoordinate();
 
-        this.add.tileSprite(fenceX, propsY, Phaser.Math.Between(100, 250), 35, 'fence').setOrigin(0, 1).setScale(screenHeight / 863);
+        this.add.tileSprite(fenceX, propsY, randomBetween(100, 250), 35, 'fence').setOrigin(0, 1).setScale(screenHeight / 863);
     }
 }
 
@@ -579,7 +579,7 @@ function generateLevel() {
     // Loop through the number of platform pieces to generate the level
     for (let platformIndex = 0; platformIndex <= platformPieces; platformIndex++) {
         // Holes will have a 10% chance of spawning
-        let number = Phaser.Math.Between(0, 100);
+        let number = randomBetween(0, 100);
 
         // Check if its not a hole, this means is not that 20%, is not in the spawn safe area and is not close to the end castle.
         if (pieceStart >= (lastWasHole > 0 || lastWasStructure > 0 || worldWidth - platformPiecesWidth * 4) || number <= 0 || pieceStart <= screenWidth * 2 || pieceStart >= worldWidth - screenWidth * 2) {

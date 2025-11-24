@@ -29,7 +29,8 @@ window.AgentHelpers = {
                 levelStarted: window.levelStarted,
                 gameOver: window.gameOver,
                 gameWon: window.gameWinned, // Note: variable name is gameWinned in game.js
-                cameraX: window.game.scene.scenes[0].cameras.main.scrollX
+                cameraX: window.game.scene.scenes[0].cameras.main.scrollX,
+                holes: window.worldHolesCoords
             }
         };
     },

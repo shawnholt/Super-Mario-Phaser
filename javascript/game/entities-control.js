@@ -10,7 +10,7 @@ function createGoombas() {
         goomba.anims.play('goomba-walk', true);
         goomba.smoothed = true;
         goomba.depth = 2;
-        if (Phaser.Math.Between(0, 10) <= 4) {
+        if (randomBetween(0, 10) <= 4) {
             goomba.setVelocityX(goombasVelocityX)
         } else {
             goomba.setVelocityX(-goombasVelocityX)
