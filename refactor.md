@@ -1,149 +1,80 @@
-# Incremental Refactor & Test Playbook for AI Agents
+# Refactoring Plan V2 (Consolidated) - The Definitive AI Agent Roadmap
 
-Audience: AI/IDE agents and humans pairing with them. Tone: teacherly, low jargon. Visual-first changes are welcome, but every step must keep current gameplay intact.
+## 1. Primary Goal: Enable AI-Driven Development
 
-## 1) Purpose & Goals
-- Keep the game playable while making code easier to tweak in tiny, verifiable steps.
-- Favor observable results (movement, sky color, HUD) over deep architecture sweeps.
-- Add lightweight checks that can run from the browser console—no new build steps or frameworks.
-- Reduce risk gradually; globals stay for now.
+The central objective of this refactoring is to restructure the codebase so that an AI agent can effectively understand, modify, and test the game without falling into "death spirals" of confusion. This plan balances the need for a stable, predictable environment for the AI with the need to preserve the game's feel and minimize risk for human players.
 
-## 2) Scope & Invariants (do not break)
-- Globals that must exist: `player`, `score`, `timeLeft`, `controlKeys`, `worldHolesCoords`, `platformGroup`, `goombasGroup`, music/effects groups, `playerState`, `playerBlocked`, `playerInvulnerable`, `playerFiring`, `fireInCooldown`, `smoothedControls`.
-- Context contract: many helpers rely on `.call(this)`; preserve that pattern when moving code.
-- Input surfaces must remain: `controlKeys` (configurable), `this.cursors` (Phaser defaults), Rex virtual joystick.
-- DOM hooks: loading GIF elements, canvas for screenshots.
-- Physics/timers: invulnerability blink timers, fireball lifespan, HUD timer recursion, tween-based transitions.
+### AI-First Design Principles
+-   **High Cohesion, Low Coupling:** Each file will have a single responsibility to reduce the context an AI needs to perform any given task.
+-   **Predictable State:** The game's evolution will be made as deterministic as possible, allowing an AI to reliably test the outcome of its actions.
+-   **Stable Agent API:** We will create a formal, stable interface for the AI to "play" the game, decoupling it from the game's internal implementation.
 
-## 3) Safety Rails for Agents
-- Work one micro-change at a time; reload tab after each save (Vite hot reload only).
-- Before you start: run the Baseline Smoke (below) and log outputs.
-- Abort/revert triggers: camera stops following, `timeLeft` stops ticking, inputs unresponsive, music overlaps, sky color stops cycling, fireballs never expire, Goombas freeze or vanish too fast.
-- Keep log prefixes like `SMOKE:` or `CHECK:` for automated parsing.
+## 2. Analysis of AI Failure Points
+The current codebase presents several traps for an AI agent that this plan will eliminate:
+-   **The Monolith (`game.js`):** A massive file that forces an AI to load too much unrelated context, leading to incorrect assumptions.
+-   **Asynchronous Updates (`setTimeout`):** Unpredictable timing logic that makes it impossible for an AI to reliably correlate its actions with changes in the game state.
+-   **Scattered Logic:** Related concepts (like power-ups) are spread across multiple files, forcing the AI to perform inefficient and error-prone searches.
+-   **Magic Numbers:** Unnamed constants that hide the semantic meaning of game parameters from the AI.
 
-## 4) Hot Reload & Testing Recipe (per AGENTS)
-- Never open new browser tabs. Use the existing Vite tab.
-- Inject events via `window.dispatchEvent(new KeyboardEvent(...))`; required props: `key`, `code`, `keyCode`, `bubbles: true`, `cancelable: true`, `view: window`. Target `window` (and `document` if needed).
-- Log before/after values (e.g., `player.x`, `player.body.velocity.y`) to prove behavior.
-- Pair keydown/keyup in tests; allow ~200–300ms before reading the after value.
+## 3. The Refactoring Roadmap
+This is a phased approach that prioritizes safety and delivers value to the AI agent at each step.
 
-## 5) Console Microtests (copy/paste friendly)
-- Move right:
-  ```js
-  console.groupCollapsed('SMOKE: move-right');
-  console.log('before x', player.x);
-  const o = {key:'ArrowRight', code:'ArrowRight', keyCode:39, bubbles:true, cancelable:true, view:window};
-  window.dispatchEvent(new KeyboardEvent('keydown', o));
-  setTimeout(() => {
-    window.dispatchEvent(new KeyboardEvent('keyup', o));
-    console.log('after x', player.x);
-    console.groupEnd();
-  }, 250);
-  ```
-- Jump:
-  ```js
-  console.groupCollapsed('SMOKE: jump');
-  console.log('before vy', player.body.velocity.y);
-  const j = {key:' ', code:'Space', keyCode:32, bubbles:true, cancelable:true, view:window};
-  window.dispatchEvent(new KeyboardEvent('keydown', j));
-  setTimeout(() => {
-    console.log('after vy', player.body.velocity.y);
-    window.dispatchEvent(new KeyboardEvent('keyup', j));
-    console.groupEnd();
-  }, 200);
-  ```
-- Fireball (requires fire state):
-  ```js
-  console.groupCollapsed('SMOKE: fireball');
-  const f = {key:'q', code:'KeyQ', keyCode:81, bubbles:true, cancelable:true, view:window};
-  console.log('goombas', (this && this.goombasGroup) ? this.goombasGroup.getChildren().length : 'n/a');
-  window.dispatchEvent(new KeyboardEvent('keydown', f));
-  setTimeout(() => window.dispatchEvent(new KeyboardEvent('keyup', f)), 150);
-  setTimeout(() => console.log('fireball test done (should despawn by 3s)'), 3200);
-  console.groupEnd();
-  ```
-- Seed logging (once seed mode exists): `console.log('seed', window.__levelSeed, 'holes', worldHolesCoords.length);`
-- Screenshot (if helper is present): `getScreenshot();`
+### Phase 0: Instrument & Anchor
+**Goal:** Make the existing monolith safer and easier to navigate before changing it.
+-   **Action:** In `game.js`, add section comments (`// --- PRELOAD ---`, `// --- UPDATE ---`, etc.) to delineate logical blocks.
+-   **Action:** Add `console.assert` statements in `create()` and `update()` to ensure critical globals (`player`, `platformGroup`, etc.) are never null or undefined, failing fast if they are.
 
-## 6) Baseline Smoke Checklist (run before/after each phase)
-1. Load `localhost:5173`, confirm no console errors.
-2. Spawn & idle: Mario renders; timer and score show.
-3. Move right: run “Move right” microtest; confirm `after x > before x`.
-4. Jump: run “Jump” microtest; confirm velocity becomes negative.
-5. Enemy contact: walk into first Goomba; expect stomp when landing on top, damage on side.
-6. Win/lose transitions (time permitting): fall in a pit for game over; reach flag/tube for win animation.
-Record console outputs for comparison.
+### Phase 1: Constants Extraction
+**Goal:** Improve code readability for the AI by replacing ambiguous numbers with descriptive constants.
+-   **Action:** Create `javascript/game/constants.js`.
+-   **Action:** Populate it with all "magic numbers" (gravity, speeds, timings) from the codebase.
+-   **Action:** Load `constants.js` in `index.html` (before other game scripts) and replace all hardcoded numbers with the new constants.
 
-## 7) Risk Register (watch these when refactoring)
-- Start screen triggers: gear block opens settings; initial camera bounds differ from level bounds.
-- Teleport tube (underground) and flag raise sequence: camera follow toggles, fades, tweens, music swaps.
-- HUD timer recursion and hurry-up music at `timeLeft === 100`.
-- Invulnerability blink timers (`applyPlayerInvulnerability`), fireball lifespan and bounce logic.
-- Goomba cleanup (`clearGoombas`) removing idle/frozen enemies—easy to break with velocity changes.
-- Sky color cycling via `C` key/gear block; uses `skyBackgrounds` array.
+### Phase 2: Agent API Scaffolding
+**Goal:** Provide the AI with a stable set of tools to interact with the game as early as possible.
+-   **Action:** Create `javascript/helpers/agent-helpers.js` and load it in `index.html`.
+-   **Action:** In this file, create a global `window.AgentHelpers` object.
+-   **Action:** Implement the first version of the API:
+    -   `window.AgentHelpers.getGameState()`: Returns a snapshot of key globals, e.g., `{ player: { x, y, state }, timeLeft, score }`.
+    -   `window.AgentHelpers.pressKey({ key, code, durationMs = 150 })`: A function that dispatches `keydown` and, after `durationMs`, a `keyup` event using `window.dispatchEvent`.
 
-## 8) Module Map (for quick search)
-- Monolith: `javascript/game.js` (preload/create/update, level gen, camera, audio, sky, start/win/lose).
-- Player: `javascript/game/player-control.js` (movement, crouch/firing, state loss).
-- Enemies: `javascript/game/entities-control.js` (Goomba spawn/collision/cleanup).
-- Blocks & power-ups: `javascript/game/blocks.js`.
-- Projectiles: `javascript/game/fireball.js`.
-- HUD & screens: `javascript/game/hud-control.js`.
-- Animations: `javascript/game/animations.js`.
-- Level patterns: `javascript/game/strucutres.js`.
-- Settings UI & GameSettings: `javascript/game/settings.js` and `javascript/settings.js` (keep globals intact).
+### Phase 3: Deterministic Level Generation (Opt-in)
+**Goal:** Create a reproducible testing environment for the AI with zero risk to the default player experience.
+-   **Action:** Add logic to `game.js` to check for a `?seed=...` URL parameter.
+-   **Action:** If a seed is present, use it to initialize a simple seeded Pseudo-Random Number Generator (PRNG).
+-   **Action:** Pass this seeded PRNG to the level generation functions. All calls to `Math.random()` in level generation must be replaced with calls to the PRNG.
+-   **Action:** If no seed is present, the game runs using `Math.random()` exactly as it does now.
 
-## 9) Phase Plan (Pareto-friendly)
-- **Phase 0 — Instrument & Anchor**
-  - Add brief section comments in `game.js` (preload, create, update, level gen, HUD/audio hooks).
-  - Add `// TODO: refactor: ...` anchors for future search.
-  - Add `console.assert` for critical globals in `create`/`update` (player, controls, groups).
-  - Test: Baseline Smoke.
-- **Phase 1 — Constants Extraction**
-  - Create `javascript/constants.js` with readonly values (speeds, gravity, timings) copied from current code.
-  - Swap literals one-at-a-time in `game.js` and `player-control.js`; log `window.gameConstants` in console to verify.
-  - Test: Baseline + console check.
-- **Phase 2 — Input Map Isolation**
-  - Add `javascript/input-map.js` exporting key bindings and a helper returning `controlKeys` while keeping globals and Rex/cursors intact.
-  - Update `game.js` to use helper but preserve `controlKeys` shape and existing joystick/cursor paths.
-  - Test: Baseline + Move/Jump microtests.
-- **Phase 3 — HUD/Timer Module**
-  - Extract HUD into `javascript/hud.js` (`createHud(scene)`, `updateHud(scene)`, `addToScore(scene, num, origin)`), respecting `.call(this)` usage.
-  - Wire `create`/`update` to the helpers.
-  - Test: Baseline + coin pickup updates score; timer counts down.
-- **Phase 4 — Enemy Encapsulation**
-  - Wrap Goomba creation/update/cleanup in helper functions and call from `game.js`.
-  - Keep velocities, collisions, and cleanup behavior identical.
-  - Test: Baseline + stomp vs side-hit.
-- **Phase 5 — Player Lifecycle Helpers**
-  - In `player-control.js`, extract grow/shrink/fire helpers; reuse internally without changing hitboxes/animations.
-  - Test: Baseline + mushroom/flower pickup and damage.
-- **Phase 6 — Level Generation Wrapper**
-  - Move level generation to `javascript/level-gen.js` with current RNG; pass needed globals explicitly.
-  - Optionally log platform count/hole coords for comparison.
-  - Test: Baseline + layout log check.
-- **Phase 7 — Deterministic Seed Toggle (optional but recommended)**
-  - Add `?seed=` query param support in `game.js` and use a tiny PRNG for level gen when present.
-  - Log seed and generated platform/hole counts.
-  - Test: Run `/?seed=1` twice; logs should match.
-- **Phase 8 — Cleanup & Docs**
-  - Keep assertions/log groups; remove dead anchors used.
-  - Add README note on Baseline Smoke and seed mode.
-  - Test: Baseline.
+### Phase 4: Safe Modularization
+**Goal:** Break apart the monolith into logical modules without performing risky deep rewrites.
+-   **Action:** Following the patterns in the original `refactor-old.md`, extract logic for HUD, Enemies, Player Lifecycle, and Level Generation into their own files (`hud-control.js`, `entities-control.js`, etc.).
+-   **Action:** These new modules will be called from `game.js` using `.call(this)` to preserve the Phaser scene context. The focus is on moving code, not re-architecting it.
 
-## 10) Debugging Tips
-- When inputs fail: log `controlKeys`, `this.cursors`, joystick state; re-run Move/Jump microtests.
-- When physics feels off: log `player.body.blocked`, `playerBlocked`, `player.body.velocity`.
-- For audio overlap: log which music tracks are playing; ensure only one loop is active.
-- Keep `console.groupCollapsed` around noisy logs to reduce clutter.
+### Phase 5: Stabilizing the Game Loop (Carefully)
+**Goal:** Achieve full determinism by replacing unstable `setTimeout` calls with a stable, game-loop-driven equivalent.
+-   **Action:** Identify all uses of `setTimeout` for game logic (e.g., the HUD timer, fireball updates).
+-   **Action:** Replace them with Phaser's built-in timing events (`this.time.addEvent({...})`) or by driving their logic directly from the main `update(time, delta)` loop.
+-   **Risk & Mitigation:** The timing and "feel" of the game is critical. After replacing a `setTimeout`, the new implementation must be carefully tested to ensure its cadence and behavior are identical to the old one. The goal is a stable implementation, not a different one.
 
-## 11) Batch Execution Strategy
-1. Apply one phase per commit.
-2. After each save: reload tab (hot reload) and run Baseline Smoke + relevant microtests.
-3. Capture console logs (before/after positions, velocities, collision messages).
-4. Proceed only if all checks pass; if not, revert the phase and re-apply with smaller diffs.
+### Phase 6: Cleanup & Documentation
+**Goal:** Finalize the process and make the new features discoverable.
+-   **Action:** Update `README.md` to document the `?seed=` parameter and the `window.AgentHelpers` API for testing.
+-   **Action:** Remove any temporary code or `//TODO` comments that are no longer relevant.
 
-## 12) Rollback & Recovery
-- If a phase fails a smoke test, undo just that phase (git checkout of touched files) and retry with smaller, single-literal swaps.
-- Keep a running log of console outputs per phase to spot drift early.
-- If camera or timer stops, first restore assertions and anchor comments to locate the regression, then re-run tests.
+## 4. Verification Strategy
+A robust testing process combines manual checks with the new agent-centric tools. The `Baseline Smoke Checklist` from `refactor-old.md` remains the standard for manual verification after each phase.
+
+An AI agent's preferred testing loop will now be:
+1.  Navigate to a URL with a known seed: `localhost:5173/?seed=123`.
+2.  Call `window.AgentHelpers.getGameState()` to get the initial state.
+3.  Call `window.AgentHelpers.pressKey({...})` to perform an action.
+4.  Wait for the action's duration to complete.
+5.  Call `window.AgentHelpers.getGameState()` again to get the final state.
+6.  Compare the initial and final states to verify the outcome. Because the level layout and game logic are now deterministic, this test will produce the same result every time.
+
+## 5. Risk Register
+The detailed risk register from `refactor-old.md` remains highly relevant. Key areas to watch during any change are:
+-   Camera logic during teleportation and at the final flag.
+-   The `timeLeft === 100` "hurry-up" music trigger.
+-   Invulnerability blink timers and fireball lifespan/bounce logic.
+-   Goomba cleanup logic.
