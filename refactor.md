@@ -126,3 +126,56 @@ Use these snippets in the browser console to test basic functionality before the
 -   **Timers:** The HUD timer recursion (especially the hurry-up music at `timeLeft === 100`), player invulnerability blinks, and fireball lifespan/bounce logic.
 -   **Enemy Logic:** Goomba cleanup (`clearGoombas`) can be sensitive to velocity changes.
 -   **Scenery:** The sky color cycling logic.
+
+---
+## 6. Appendix: Mid-Project Continuation Plan (REVISED & SAFER)
+
+### 6.1 Summary of Prior Work (State as of Nov 2025)
+A previous agent has already completed the goals of several phases in a single batch:
+-   **Phase 0 (Instrument & Anchor):** ✅ Completed.
+-   **Phase 1 (Constants Extraction):** ✅ Completed. `constants.js` exists and replaces the obsolete `settings.js`.
+-   **Phase 3 (Deterministic RNG):** ✅ Completed. `rng.js` exists and is used by the level generator.
+-   **Phase 4 (Modularization):** ✅ Partially completed. Level generation code was moved to `level-generation.js`.
+
+**Current State:** The code is functional but inconsistent. It uses a mix of the new `window.GameConstants` and the old `window.GameSettings` (via a compatibility shim in `constants.js`).
+
+### 6.2 New Execution Plan (Safer, More Granular)
+Your task is to stabilize the codebase and then resume the original refactoring roadmap. Execute these tasks **sequentially**, running the full **`Baseline Smoke Checklist`** after every single action that modifies a file.
+
+**Task 1: Harden RNG**
+-   **Goal:** Prevent `NaN` errors from invalid seed parameters.
+-   **Action:** Read `javascript/helpers/rng.js`. Modify the seed parsing logic to validate that the seed is a number. If it is not a valid number, fall back to using `Math.random()`.
+-   **Verify:** Run the Smoke Checklist.
+
+**Task 2: Finish Codebase Consistency Refactor**
+-   **Goal:** Eliminate the `GameSettings` compatibility layer by refactoring all remaining code to use `window.GameConstants`.
+-   **Action:** Search the entire `/javascript` directory for any remaining uses of `window.GameSettings`. Known locations include `game.js`, `player-control.js`, and `entities-control.js`.
+-   **Action:** For each file, replace every instance of `GameSettings` with the correct path in `window.GameConstants` (e.g., `window.GameSettings.playerSpeed` becomes `window.GameConstants.PlayerSpeed`). **Commit after each file is refactored and verified.**
+-   **Verify:** After each file modification, run the Smoke Checklist.
+
+**Task 3: Remove Compatibility Shim**
+-   **Goal:** Remove the now-unnecessary backwards-compatibility layer.
+-   **Action:** After all `GameSettings` references are confirmed to be gone from the entire project, delete the `window.GameSettings` object from the bottom of `javascript/game/constants.js`.
+-   **Verify:** Run the Smoke Checklist.
+
+**Task 4: Consolidate `strucutres.js`**
+-   **Goal:** Finish modularizing level generation.
+-   **Action:** Move the `generateStructure` function from `javascript/game/strucutres.js` into `javascript/game/level-generation.js`.
+-   **Action:** Update `level-generation.js` to call the function locally.
+-   **Verify:** Run the Smoke Checklist, ensuring levels still generate with structures.
+-   **Action (Conditional):** If the above passes verification, delete the now-obsolete `javascript/game/strucutres.js` file and its `<script>` tag from `index.html`.
+-   **Verify:** Run the Smoke Checklist again.
+
+**Task 5: Clean up Obsolete `settings.js`**
+-   **Goal:** Remove the original, now-unused constants file.
+-   **Action:** The file `javascript/settings.js` (at the root of the `javascript` folder) is obsolete. Delete it.
+-   **Action:** Verify the `<script>` tag for `javascript/settings.js` is gone from `index.html`. (Note: Do NOT touch `javascript/game/settings.js`, which controls the UI).
+-   **Verify:** Run the Smoke Checklist.
+
+**Task 6: Commit All Cleanup**
+-   **Action:** If all the above tasks have passed, commit all staged changes with the message: `"refactor: Complete codebase cleanup and file consolidation"`
+
+**Task 7: Resume Original Roadmap**
+-   **Action:** With the cleanup complete, resume the original plan. The next task is **Phase 2: Agent API Scaffolding**.
+-   **Action (Modified for Safety):** A previous agent likely created the file `javascript/helpers/agent-helpers.js`. Your first action for this phase is to **verify and complete** it. Ensure it contains `getGameState()` and `pressKey()` functions attached to a global `window.AgentHelpers` object. Extend them if necessary to match the specification in the main body of Phase 2. **Do not overwrite or re-create the file if it exists.**
+-   **Action:** After verifying or completing the Agent API, proceed with the remaining phases (`Phase 5`, `Phase 6`). Follow all verification and commit rules.
