@@ -1,20 +1,20 @@
 function createHUD() {
     let posY = screenWidth / 23;
 
-    this.scoreText = this.add.text(screenWidth / 40, posY, '', { fontFamily: 'pixel_nums', fontSize: (screenWidth / 65), align: 'left'});
+    this.scoreText = this.add.text(screenWidth / 40, posY, '', { fontFamily: 'pixel_nums', fontSize: (screenWidth / 65), align: 'left' });
     this.scoreText.setScrollFactor(0).depth = 5;
 
-    this.highScoreText = this.add.text(screenWidth / 2, posY, 'HIGH SCORE\n 000000', { fontFamily: 'pixel_nums', fontSize: (screenWidth / 65), align: 'center'}).setOrigin(0.5, 0);
+    this.highScoreText = this.add.text(screenWidth / 2, posY, 'HIGH SCORE\n 000000', { fontFamily: 'pixel_nums', fontSize: (screenWidth / 65), align: 'center' }).setOrigin(0.5, 0);
     this.highScoreText.setScrollFactor(0).depth = 5;
 
-    this.timeLeftText = this.add.text(screenWidth * 0.925, posY, 'TIME\n' + timeLeft.toString().padStart(3, '0'), { fontFamily: 'pixel_nums', fontSize: (screenWidth / 65), align: 'right'});
+    this.timeLeftText = this.add.text(screenWidth * 0.925, posY, 'TIME\n' + timeLeft.toString().padStart(3, '0'), { fontFamily: 'pixel_nums', fontSize: (screenWidth / 65), align: 'right' });
     this.timeLeftText.setScrollFactor(0).depth = 5;
 
     let localHighScore = localStorage.getItem('high-score');
     if (localHighScore !== null) {
         this.highScoreText.setText('HIGH SCORE\n' + localHighScore.toString().padStart(6, '0'))
     }
-    
+
     updateScore.call(this);
 }
 
@@ -31,11 +31,11 @@ function updateTimer() {
         this.musicTheme.stop();
         this.undergroundMusicTheme.stop()
         this.timeWarningSound.play();
-        setTimeout(() => {
+        this.time.delayedCall(2400, () => {
             this.hurryMusicTheme.play();
             //this.musicTheme.rate = 1.2;
             //this.musicTheme.resume();
-        }, 2400);
+        });
     }
 
     if (!this.timeLeftText.stopped) {
@@ -43,52 +43,54 @@ function updateTimer() {
         this.timeLeftText.setText('TIME\n' + timeLeft.toString().padStart(3, '0'));
     }
 
-    setTimeout(() => {
+    this.time.delayedCall(500, () => {
         updateTimer.call(this);
-    }, 500);
+    });
 }
 
 function addToScore(num, originObject) {
-    
-    for (i = 1; i <= num; i++) {
-        setTimeout(() => {
+
+    this.time.addEvent({
+        delay: 1,
+        repeat: num - 1,
+        callback: () => {
             score++;
             updateScore.call(this);
-        }, i);
-    }
-    
-    if (!originObject) return;
-    
-    const textEffect = this.add.text(originObject.getBounds().x, originObject.getBounds().y, num, {
-      fontFamily: 'pixel_nums',
-      fontSize: (screenWidth / 150),
-      align: 'center'
+        }
     });
-    
+
+    if (!originObject) return;
+
+    const textEffect = this.add.text(originObject.getBounds().x, originObject.getBounds().y, num, {
+        fontFamily: 'pixel_nums',
+        fontSize: (screenWidth / 150),
+        align: 'center'
+    });
+
     textEffect.setOrigin(0).smoothed = true;
     textEffect.depth = 5;
-    
+
     this.tweens.add({
-      targets: textEffect,
-      duration: 600,
-      y: textEffect.y - screenHeight / 6.5,
-      onComplete: () => {
-        this.tweens.add({
-          targets: textEffect,
-          duration: 100,
-          alpha: 0,
-          onComplete: () => {
-            textEffect.destroy();
-          }
-        });
-      }
+        targets: textEffect,
+        duration: 600,
+        y: textEffect.y - screenHeight / 6.5,
+        onComplete: () => {
+            this.tweens.add({
+                targets: textEffect,
+                duration: 100,
+                alpha: 0,
+                onComplete: () => {
+                    textEffect.destroy();
+                }
+            });
+        }
     });
-  }
+}
 
 
 // Game over functions
 
-function gameOverScreen(outOfTime=false) {
+function gameOverScreen(outOfTime = false) {
     if (localStorage.getItem('high-score') !== null) {
         if (localStorage.getItem('high-score') < score) {
             localStorage.setItem('high-score', score);
@@ -136,19 +138,19 @@ function gameOverFunc() {
     }
     player.body.setSize(16, 16).setOffset(0);
     player.setVelocityX(0);
-    setTimeout(() => {
-    player.body.enable = true;
-    player.setVelocityY(-velocityY * 1.1);
-    }, 500);
+    this.time.delayedCall(500, () => {
+        player.body.enable = true;
+        player.setVelocityY(-velocityY * 1.1);
+    });
     this.musicTheme.stop();
     this.undergroundMusicTheme.stop();
     this.hurryMusicTheme.stop();
     this.gameOverSong.play();
-    setTimeout(() => {
+    this.time.delayedCall(3000, () => {
         player.depth = 0;
         gameOverScreen.call(this, timeLeft <= 0);
         this.physics.pause();
-    }, 3000);
+    });
     return;
 }
 

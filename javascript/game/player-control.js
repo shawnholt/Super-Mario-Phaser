@@ -28,22 +28,23 @@ function decreasePlayerState() {
     player.anims.play(anim2);
 
     let i = 0;
-    let interval = setInterval(() => {
-        i++;
-        player.anims.play(i % 2 === 0 ? anim2 : anim1);
-        if (i > 5) {
-            clearInterval(interval);
+    this.time.addEvent({
+        delay: 100,
+        repeat: 5,
+        callback: () => {
+            i++;
+            player.anims.play(i % 2 === 0 ? anim2 : anim1);
         }
-    }, 100);
+    });
 
     playerState--;
 
-    setTimeout(() => {
+    this.time.delayedCall(1000, () => {
         this.physics.resume();
         this.anims.resumeAll();
         playerBlocked = false;
         updateTimer.call(this);
-    }, 1000);
+    });
 }
 
 function applyPlayerInvulnerability(time) {
@@ -57,11 +58,11 @@ function applyPlayerInvulnerability(time) {
     });
 
     playerInvulnerable = true;
-    setTimeout(() => {
+    this.time.delayedCall(time, () => {
         playerInvulnerable = false;
         blinkAnim.stop();
         player.alpha = 1;
-    }, time);
+    });
 }
 
 function updatePlayer(delta) {
@@ -83,11 +84,11 @@ function updatePlayer(delta) {
                 alpha: 0
             });
         }
-        setTimeout(() => {
+        this.time.delayedCall(5000, () => {
             gameWinned = true;
             player.destroy();
             winScreen.call(this);
-        }, 5000);
+        });
         return;
     }
 

@@ -4,13 +4,13 @@ function throwFireball() {
     player.anims.play('fire-mario-throw');
     playerFiring = true;
     fireInCooldown = true;
-    setTimeout(() => {
+    this.time.delayedCall(100, () => {
         playerFiring = false;
-    }, 100);
+    });
 
-    setTimeout(() => {
+    this.time.delayedCall(350, () => {
         fireInCooldown = false;
-    }, 350);
+    });
 
     let fireball = this.physics.add.sprite(player.getBounds().x + (player.width * 1.15), player.getBounds().y + (player.height / 1.25), 'fireball').setScale(screenHeight / 345);
     fireball.allowGravity = true;
@@ -32,23 +32,23 @@ function throwFireball() {
     this.physics.add.collider(fireball, this.immovableBlocksGroup.getChildren(), fireballBounce, null, this);
     this.physics.add.collider(fireball, this.constructionBlocksGroup.getChildren(), fireballBounce, null, this);
 
-    setTimeout(() => {
+    this.time.delayedCall(3000, () => {
         fireball.dead = true;
         this.tweens.add({
             targets: fireball,
             duration: 100,
             alpha: { from: 1, to: 0 },
         });
-        setTimeout(() => {
+        this.time.delayedCall(100, () => {
             fireball.destroy();
-        }, 100);
-    }, 3000);
+        });
+    });
 }
 
 function fireballCollides(fireball, entitie) {
     if (fireball.exploded || fireball.dead)
         return;
-        
+
     fireball.exploded = true;
     fireball.dead = true;
     fireball.body.moves = false;
@@ -62,46 +62,40 @@ function fireballCollides(fireball, entitie) {
     this.goombasGroup.remove(entitie);
     entitie.setVelocityX(0);
     entitie.setVelocityY(-velocityY * 0.4);
-    setTimeout(() => {
+    this.time.delayedCall(400, () => {
         this.tweens.add({
             targets: entitie,
             duration: 750,
             y: screenHeight * 1.1
         });
-    }, 400);
+    });
 
     addToScore.call(this, 100, entitie);
-    setTimeout(() => {
+    this.time.delayedCall(1250, () => {
         entitie.destroy();
-    }, 1250);
+    });
 }
 
 function explodeFireball(fireball) {
     fireball.anims.play('fireball-explosion-1', true);
 
-    const destroyFireball = () => {
-      if (fireball) {
-        fireball.destroy();
-      }
-    };
-    
-    Promise.resolve()
-      .then(() => new Promise(resolve => setTimeout(() => {
-        if (fireball) {
-          fireball.anims.play('fireball-explosion-2', true);
+    this.time.delayedCall(50, () => {
+        if (fireball && fireball.scene) {
+            fireball.anims.play('fireball-explosion-2', true);
         }
-        resolve();
-      }, 50)))
-      .then(() => new Promise(resolve => setTimeout(() => {
-        if (fireball) {
-          fireball.anims.play('fireball-explosion-3', true);
+    });
+
+    this.time.delayedCall(85, () => {
+        if (fireball && fireball.scene) {
+            fireball.anims.play('fireball-explosion-3', true);
         }
-        resolve();
-      }, 35)))
-      .then(() => new Promise(resolve => setTimeout(() => {
-        destroyFireball();
-        resolve();
-      }, 45)));    
+    });
+
+    this.time.delayedCall(130, () => {
+        if (fireball && fireball.scene) {
+            fireball.destroy();
+        }
+    });
 }
 
 function updateFireballAnimation(fireball) {
@@ -123,9 +117,9 @@ function updateFireballAnimation(fireball) {
         }
     }
 
-    setTimeout(() => {
+    this.time.delayedCall(250, () => {
         updateFireballAnimation.call(this, fireball);
-    }, 250);
+    });
 }
 
 function fireballBounce(fireball, collider) {
@@ -134,17 +128,17 @@ function fireballBounce(fireball, collider) {
         fireball.exploded = true;
         fireball.dead = true;
         fireball.body.moves = false;
-    
+
         this.blockBumpSound.play();
         explodeFireball.call(this, fireball);
         return;
     }
 
-    if (fireball.body.blocked.down) 
-    fireball.setVelocityY(-levelGravity / 3.45);
+    if (fireball.body.blocked.down)
+        fireball.setVelocityY(-levelGravity / 3.45);
 
-    if (fireball.body.blocked.up) 
-    fireball.setVelocityY(levelGravity / 3.45);
+    if (fireball.body.blocked.up)
+        fireball.setVelocityY(levelGravity / 3.45);
 
     if (fireball.body.blocked.left) {
         fireball.isVelocityPositive = false;

@@ -233,21 +233,21 @@ function preload() {
     this.load.audio('underground-music', 'assets/sound/music/underground/theme.mp3');
     this.load.audio('hurry-up-music', 'assets/sound/music/' + levelStyle + '/hurry-up-theme.mp3');
     this.load.audio('gameoversong', 'assets/sound/music/gameover.mp3');
-    this.load.audio('win', 'assets/sound/music/win.wav');
+    this.load.audio('win', 'assets/sound/music/win.mp3');
     this.load.audio('jumpsound', 'assets/sound/effects/jump.mp3');
     this.load.audio('coin', 'assets/sound/effects/coin.mp3');
     this.load.audio('powerup-appears', 'assets/sound/effects/powerup-appears.mp3');
     this.load.audio('consume-powerup', 'assets/sound/effects/consume-powerup.mp3');
     this.load.audio('powerdown', 'assets/sound/effects/powerdown.mp3');
-    this.load.audio('goomba-stomp', 'assets/sound/effects/goomba-stomp.wav');
+    this.load.audio('goomba-stomp', 'assets/sound/effects/goomba-stomp.mp3');
     this.load.audio('flagpole', 'assets/sound/effects/flagpole.mp3');
     this.load.audio('fireball', 'assets/sound/effects/fireball.mp3');
     this.load.audio('kick', 'assets/sound/effects/kick.mp3');
     this.load.audio('time-warning', 'assets/sound/effects/time-warning.mp3');
     this.load.audio('here-we-go', randomBetween(0, 100) < 98 ? 'assets/sound/effects/here-we-go.mp3' : 'assets/sound/effects/cursed-here-we-go.mp3');
-    this.load.audio('pauseSound', 'assets/sound/effects/pause.wav');
-    this.load.audio('block-bump', 'assets/sound/effects/block-bump.wav');
-    this.load.audio('break-block', 'assets/sound/effects/break-block.wav');
+    this.load.audio('pauseSound', 'assets/sound/effects/pause.mp3');
+    this.load.audio('block-bump', 'assets/sound/effects/block-bump.mp3');
+    this.load.audio('break-block', 'assets/sound/effects/break-block.mp3');
 }
 
 function initSounds() {
@@ -427,7 +427,7 @@ function startLevel(player, trigger) {
 
     this.hereWeGoSound.play();
 
-    setTimeout(() => {
+    this.time.delayedCall(1100, () => {
         if (!isLevelOverworld) {
             player.y = screenHeight / 5;
             this.musicTheme.stop();
@@ -443,7 +443,7 @@ function startLevel(player, trigger) {
         this.startScreenTrigger.destroy();
         levelStarted = true;
         if (this.settingsMenuOpen) hideSettings.call(this);
-    }, 1100);
+    });
 }
 
 
@@ -470,7 +470,7 @@ function teleportToLevelEnd(player, trigger) {
 
     this.undergroundRoof.destroy();
 
-    setTimeout(() => {
+    this.time.delayedCall(500, () => {
         this.physics.world.setBounds(worldWidth - screenWidth, 0, worldWidth, screenHeight);
         this.tpTube = this.add.tileSprite(worldWidth - screenWidth / 1.089, screenHeight - platformHeight, 32, 32, 'vertical-medium-tube').setScale(screenHeight / 345).setOrigin(1);
         this.tpTube.depth = 4;
@@ -482,9 +482,9 @@ function teleportToLevelEnd(player, trigger) {
         endSky.depth = -1;
         skyBackgrounds.push(endSky);
         this.add.tileSprite(worldWidth - screenWidth, screenHeight, screenWidth, platformHeight, 'start-floorbricks').setScale(2).setOrigin(0, 0.5).depth = 2;
-    }, 500);
+    });
 
-    setTimeout(() => {
+    this.time.delayedCall(1100, () => {
         player.alpha = 1;
         player.x = worldWidth - screenWidth / 1.08;
         this.cameras.main.pan(worldWidth - screenWidth / 2, 0, 0);
@@ -496,10 +496,10 @@ function teleportToLevelEnd(player, trigger) {
             duration: 500,
             y: this.tpTube.getBounds().y
         });
-        setTimeout(() => {
+        this.time.delayedCall(500, () => {
             playerBlocked = false;
-        }, 500);
-    }, 1100);
+        });
+    });
 }
 
 function drawStartScreen() {
@@ -582,9 +582,9 @@ function raiseFlag() {
         y: screenHeight / 2.2
     });
 
-    setTimeout(() => {
+    this.time.delayedCall(1000, () => {
         this.winSound.play();
-    }, 1000);
+    });
 
     flagRaised = true;
     playerBlocked = true;
@@ -609,22 +609,25 @@ function consumeMushroom(player, mushroom) {
     this.physics.pause();
     player.setTint(0xfefefe).anims.play('grown-mario-idle');
     let i = 0;
-    let interval = setInterval(() => {
-        i++;
-        player.anims.play(i % 2 === 0 ? 'grown-mario-idle' : 'idle');
-        if (i > 5) {
-            clearInterval(interval);
-            player.clearTint();
+    this.time.addEvent({
+        delay: 100,
+        repeat: 5,
+        callback: () => {
+            i++;
+            player.anims.play(i % 2 === 0 ? 'grown-mario-idle' : 'idle');
+            if (i > 5) {
+                player.clearTint();
+            }
         }
-    }, 100);
+    });
 
-    setTimeout(() => {
+    this.time.delayedCall(1000, () => {
         this.physics.resume();
         this.anims.resumeAll();
         playerBlocked = false;
         playerState = 1;
         updateTimer.call(this);
-    }, 1000);
+    });
     //player.body.setSize(16, 32).setOffset(1,0);
 }
 
@@ -646,22 +649,25 @@ function consumeFireflower(player, fireFlower) {
 
     player.setTint(0xfefefe).anims.play('fire-mario-idle');
     let i = 0;
-    let interval = setInterval(() => {
-        i++;
-        player.anims.play(i % 2 === 0 ? 'fire-mario-idle' : anim);
-        if (i > 5) {
-            clearInterval(interval);
-            player.clearTint();
+    this.time.addEvent({
+        delay: 100,
+        repeat: 5,
+        callback: () => {
+            i++;
+            player.anims.play(i % 2 === 0 ? 'fire-mario-idle' : anim);
+            if (i > 5) {
+                player.clearTint();
+            }
         }
-    }, 100);
+    });
 
-    setTimeout(() => {
+    this.time.delayedCall(1000, () => {
         this.physics.resume();
         this.anims.resumeAll();
         playerBlocked = false;
         playerState = 2;
         updateTimer.call(this);
-    }, 1000);
+    });
     //player.body.setSize(16, 32).setOffset(1,0);
 }
 

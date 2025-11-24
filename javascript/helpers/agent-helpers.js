@@ -39,7 +39,7 @@ window.AgentHelpers = {
      * Simulates a key press for a specified duration.
      * @param {Object} options - { key, code, durationMs }
      */
-    pressKey: function ({ key, code, durationMs = 150 }) {
+    pressKey: function (scene, { key, code, durationMs = 150 }) {
         const keyCode = this._getKeyCode(code);
         const eventOptions = {
             key: key,
@@ -54,9 +54,19 @@ window.AgentHelpers = {
         window.dispatchEvent(new KeyboardEvent('keydown', eventOptions));
 
         // Schedule keyup
-        setTimeout(() => {
-            window.dispatchEvent(new KeyboardEvent('keyup', eventOptions));
-        }, durationMs);
+        if (scene && scene.time) {
+            scene.time.addEvent({
+                delay: durationMs,
+                callback: () => {
+                    window.dispatchEvent(new KeyboardEvent('keyup', eventOptions));
+                }
+            });
+        } else {
+            console.warn('AgentHelpers.pressKey: Scene not provided, falling back to setTimeout');
+            setTimeout(() => {
+                window.dispatchEvent(new KeyboardEvent('keyup', eventOptions));
+            }, durationMs);
+        }
     },
 
     /**

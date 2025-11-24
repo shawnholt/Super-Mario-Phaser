@@ -34,7 +34,11 @@ function createGoombas() {
     this.physics.add.collider(this.goombasGroup.getChildren(), this.fallProtectionGroup.getChildren());
     this.physics.add.collider(this.goombasGroup.getChildren(), this.finalTrigger);
 
-    setInterval(clearGoombas.call(this), 250);
+    this.time.addEvent({
+        delay: 250,
+        loop: true,
+        callback: () => clearGoombas.call(this)
+    });
 }
 
 function checkGoombaCollision(player, goomba) {
@@ -60,16 +64,16 @@ function checkGoombaCollision(player, goomba) {
         this.goombaStompSound.play();
         player.setVelocityY(-velocityY / 1.5);
         addToScore.call(this, 100, goomba);
-        setTimeout(() => {
+        this.time.delayedCall(200, () => {
             this.tweens.add({
                 targets: goomba,
                 duration: 300,
                 alpha: 0
             });
-        }, 200);
-        setTimeout(() => {
+        });
+        this.time.delayedCall(500, () => {
             goomba.destroy();
-        }, 500);
+        });
         return;
     }
 

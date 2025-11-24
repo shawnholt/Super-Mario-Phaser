@@ -157,9 +157,12 @@ function drawDestroyedBlockParticles(block) {
         particle.depth = 4;
     }
 
-    setTimeout(() => {
+    this.time.delayedCall(3000, () => {
         for (let particleCoords of particles) {
-            this.physics.world.disableBody(particleCoords[0], particleCoords[1]);
+            // Note: This logic seems suspicious as it uses coordinates, but preserving original intent.
+            if (this.physics.world.disableBody) {
+                this.physics.world.disableBody(particleCoords[0], particleCoords[1]);
+            }
         }
-    }, 3000);
+    });
 }

@@ -178,4 +178,42 @@ Your task is to stabilize the codebase and then resume the original refactoring 
 **Task 7: Resume Original Roadmap**
 -   **Action:** With the cleanup complete, resume the original plan. The next task is **Phase 2: Agent API Scaffolding**.
 -   **Action (Modified for Safety):** A previous agent likely created the file `javascript/helpers/agent-helpers.js`. Your first action for this phase is to **verify and complete** it. Ensure it contains `getGameState()` and `pressKey()` functions attached to a global `window.AgentHelpers` object. Extend them if necessary to match the specification in the main body of Phase 2. **Do not overwrite or re-create the file if it exists.**
--   **Action:** After verifying or completing the Agent API, proceed with the remaining phases (`Phase 5`, `Phase 6`). Follow all verification and commit rules.
+    **Action:** After verifying or completing the Agent API, proceed with the remaining phases (`Phase 5`, `Phase 6`). Follow all verification and commit rules.
+
+---
+## 7. Appendix: Handoff Plan for Next Agent (Nov 2025)
+
+### 7.1. Current Status Summary
+A detailed review of the codebase has been completed. The "Mid-Project Continuation Plan" (Appendix 6.2) is mostly finished, but several key tasks from the main roadmap are still outstanding.
+
+-   **`COMPLETE`**:
+    -   Phase 0: Instrument & Anchor
+    -   Phase 1: Constants Extraction
+    -   Phase 2: Agent API Scaffolding (`agent-helpers.js` is implemented)
+    -   Phase 3: Deterministic Level Generation (`rng.js` is hardened)
+    -   Phase 4: Safe Modularization (Core files extracted)
+    -   File cleanup tasks (obsolete `settings.js` and `strucutres.js` removed)
+
+-   **`INCOMPLETE`**:
+    -   **Shim Removal:** The `window.GameSettings` compatibility shim remains in `javascript/game/constants.js`.
+    -   **Phase 5: Stabilizing the Game Loop:** The codebase still uses many non-deterministic `setTimeout` calls.
+    -   **Phase 6: Cleanup & Documentation:** The `README.md` has not been updated with the new features.
+
+### 7.2. Remaining Tasks (Execute in Order)
+The next agent must complete the following tasks sequentially.
+
+**Task 1: Remove Compatibility Shim**
+-   **Goal:** Finalize codebase consistency.
+-   **Action:** Delete the `window.GameSettings` object from the end of `javascript/game/constants.js`.
+-   **Verify:** Run the `Baseline Smoke Checklist` (Appendix 5.2) to ensure no regressions.
+
+**Task 2: Stabilize Game Loop (Phase 5)**
+-   **Goal:** Achieve full determinism for reliable AI testing by replacing unstable timing events.
+-   **Action:** Systematically replace all `setTimeout` calls with Phaser's `this.time.addEvent({...})` or by driving them from the main `update(time, delta)` loop. This is a large, sensitive task. It is recommended to work on one file at a time, followed by verification.
+-   **Reference Files:** `game.js`, `fireball.js`, `player-control.js`, `hud-control.js`, `entities-control.js`, `blocks.js`.
+-   **Verify:** After each file is refactored, run the `Baseline Smoke Checklist`. The game's timing and "feel" must be preserved.
+
+**Task 3: Finalize Documentation (Phase 6)**
+-   **Goal:** Make new testing features discoverable.
+-   **Action:** Update `README.md` to document the `?seed=` URL parameter for seeded level generation and the `window.AgentHelpers` API for external control.
+-   **Verify:** Manually review the `README.md` to confirm the new documentation is clear and accurate.
